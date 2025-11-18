@@ -1,0 +1,13 @@
+{
+    "lab_id": "daf",
+    "criteria": [
+        {
+            "type": "command",
+            "key": "dfasf",
+            "description": "adfsasdf",
+            "expected": "adfadsf",
+            "command": "adfasf",
+            "score": 100.0
+        }
+    ]
+}

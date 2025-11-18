@@ -1,0 +1,14 @@
+{
+    "lab_id": "asdfa",
+    "criteria": [
+        {
+            "type": "package",
+            "key": "adfa",
+            "description": "asdf",
+            "expected": "installed",
+            "package": "adsfaf",
+            "parameter": "asdfasdf",
+            "score": 100.0
+        }
+    ]
+}

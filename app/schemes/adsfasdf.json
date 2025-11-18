@@ -1,0 +1,13 @@
+{
+    "lab_id": "adsfasdf",
+    "criteria": [
+        {
+            "type": "command",
+            "key": "asfdadf",
+            "description": "sdfasdfa",
+            "expected": "adfsaf",
+            "command": "asdfsadf",
+            "score": 100.0
+        }
+    ]
+}

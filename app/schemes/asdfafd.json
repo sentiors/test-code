@@ -1,0 +1,13 @@
+{
+    "lab_id": "asdfafd",
+    "criteria": [
+        {
+            "type": "package",
+            "key": "afdas",
+            "description": "asdfa",
+            "expected": "installed",
+            "package": "asfd",
+            "score": 100.0
+        }
+    ]
+}

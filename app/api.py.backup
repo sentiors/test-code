@@ -1,0 +1,44 @@
+from flask import Flask, request, jsonify
+import os, subprocess, json
+from database import db_session, init_db
+from utils import validate_results
+
+app = Flask(__name__)
+
+# Skema Penilaian
+SCHEME_PATH = "/opt/grading/app/schemes/"
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get("username")
+    password = data.get("password")
+    if username == "student" and password == "password123":  # Dummy login
+        return jsonify({"token": "dummy-token"})
+    return jsonify({"error": "Invalid credentials"}), 401
+
+@app.route('/start-lab', methods=['POST'])
+def start_lab():
+    lab_id = request.json.get("lab_id")
+    scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
+    if os.path.exists(scheme_file):
+        with open(scheme_file, 'r') as f:
+            scheme = json.load(f)
+        return jsonify({"scheme": scheme})
+    return jsonify({"error": "Lab not found"}), 404
+
+@app.route('/grade-lab', methods=['POST'])
+def grade_lab():
+    lab_id = request.json.get("lab_id")
+    user_results = request.json.get("results")
+    scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
+    if os.path.exists(scheme_file):
+        with open(scheme_file, 'r') as f:
+            scheme = json.load(f)
+        score, feedback = validate_results(scheme, user_results)
+        return jsonify({"score": score, "feedback": feedback})
+    return jsonify({"error": "Lab not found"}), 404
+
+if __name__ == "__main__":
+    init_db()
+    app.run(host='0.0.0.0', port=5000, debug=True)

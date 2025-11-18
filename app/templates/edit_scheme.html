@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Scheme</title>
+</head>
+<body>
+    <h1>Edit Scheme: {{ scheme.lab_id }}</h1>
+    <form id="editForm">
+        <div id="criteria">
+            {% for criterion in scheme.criteria %}
+                <div class="criterion">
+                    <label for="type">Type:</label>
+                    <select name="type" required>
+                        {% for type in types %}
+                            <option value="{{ type }}" {% if type == criterion.type %}selected{% endif %}>{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="key">Key:</label>
+                    <input type="text" name="key" value="{{ criterion.key }}" required>
+                    <label for="expected">Expected:</label>
+                    <select name="expected" required>
+                        {% for exp in expected[criterion.type] %}
+                            <option value="{{ exp }}" {% if exp == criterion.expected %}selected{% endif %}>{{ exp }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="description">Description:</label>
+                    <input type="text" name="description" value="{{ criterion.description }}" required>
+                    <label for="score">Score:</label>
+                    <input type="number" name="score" value="{{ criterion.score }}" required>
+                    <button type="button" onclick="removeCriterion(this)">Remove</button>
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" onclick="addCriterion()">Add Criterion</button>
+        <button type="submit">Save</button>
+    </form>
+
+    <script>
+        const expectedOptions = {
+            {% for type, exps in expected.items() %}
+                "{{ type }}": {{ exps | tojson }},
+            {% endfor %}
+        };
+
+        function addCriterion() {
+            const criteriaDiv = document.getElementById('criteria');
+            const newCriterion = document.createElement('div');
+            newCriterion.className = 'criterion';
+            newCriterion.innerHTML = `
+                <label for="type">Type:</label>
+                <select name="type" required>
+                    {% for type in types %}
+                        <option value="{{ type }}">{{ type }}</option>
+                    {% endfor %}
+                </select>
+                <label for="key">Key:</label>
+                <input type="text" name="key" required>
+                <label for="expected">Expected:</label>
+                <select name="expected" required>
+                    {% for exp in expected.command %}
+                        <option value="{{ exp }}">{{ exp }}</option>
+                    {% endfor %}
+                </select>
+                <label for="description">Description:</label>
+                <input type="text" name="description" required>
+                <label for="score">Score:</label>
+                <input type="number" name="score" required>
+                <button type="button" onclick="removeCriterion(this)">Remove</button>
+            `;
+            criteriaDiv.appendChild(newCriterion);
+
+            // Update expected options based on selected type
+            const typeSelect = newCriterion.querySelector('select[name="type"]');
+            const expectedSelect = newCriterion.querySelector('select[name="expected"]');
+            typeSelect.addEventListener('change', () => {
+                const selectedType = typeSelect.value;
+                expectedSelect.innerHTML = expectedOptions[selectedType].map(exp => `
+                    <option value="${exp}">${exp}</option>
+                `).join('');
+            });
+        }
+
+        function removeCriterion(button) {
+            const criterionDiv = button.parentElement;
+            criterionDiv.remove();
+        }
+
+        document.getElementById('editForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const criteria = [];
+            document.querySelectorAll('.criterion').forEach(criterion => {
+                const inputs = criterion.querySelectorAll('input, select');
+                criteria.push({
+                    type: inputs[0].value,
+                    key: inputs[1].value,
+                    expected: inputs[2].value,
+                    description: inputs[3].value,
+                    score: parseInt(inputs[4].value)
+                });
+            });
+
+            const data = {
+                lab_id: "{{ scheme.lab_id }}",
+                criteria: criteria
+            };
+
+            fetch('/edit_scheme/{{ scheme.lab_id }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            }).then(response => response.json())
+              .then(data => {
+                  alert(data.message);
+                  window.location.reload();
+              });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+    "lab_id": "eaewr",
+    "criteria": [
+        {
+            "type": "package",
+            "key": "qwerqer",
+            "description": "qweqr",
+            "expected": "installed",
+            "package": "qqweqr",
+            "score": 100.0
+        }
+    ]
+}

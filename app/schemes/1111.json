@@ -1,0 +1,14 @@
+{
+    "lab_id": "1111",
+    "criteria": [
+        {
+            "type": "config_check",
+            "key": "asdfasdf",
+            "description": "asdfasdf",
+            "expected": "adsfadsf",
+            "path": "adfadsf",
+            "parameter": "adfasf",
+            "score": 100.0
+        }
+    ]
+}

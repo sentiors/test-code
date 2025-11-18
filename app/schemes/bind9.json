@@ -1,0 +1,13 @@
+{
+    "lab_id": "bind9",
+    "criteria": [
+        {
+            "type": "package",
+            "key": "bind9-check",
+            "description": "bind9 ada",
+            "expected": "installed",
+            "package": "bind9",
+            "score": 100.0
+        }
+    ]
+}

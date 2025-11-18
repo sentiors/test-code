@@ -1,0 +1,29 @@
+{
+    "lab_id": "create-directory-and-files",
+    "criteria": [
+        {
+            "type": "directory",
+            "key": "dir_lab04",
+            "path": "/home/lab-04",
+            "expected": "exists",
+            "score": 20,
+            "description": "Check if the directory /home/lab-04 exists"
+        },
+        {
+            "type": "file_content",
+            "key": "file_index_txt",
+            "path": "/home/lab-04/index.txt",
+            "contains": "Hallo <username>",
+            "score": 50,
+            "description": "Check if index.txt exists and contains the correct content"
+        },
+        {
+            "type": "file_exists",
+            "key": "file_text_txt",
+            "path": "/home/lab-04/text.txt",
+            "expected": "deleted",
+            "score": 30,
+            "description": "Check if text.txt is deleted"
+        }
+    ]
+}

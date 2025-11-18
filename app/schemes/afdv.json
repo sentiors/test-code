@@ -1,0 +1,13 @@
+{
+    "lab_id": "afdv",
+    "criteria": [
+        {
+            "type": "package",
+            "key": "adfadsf",
+            "description": "adsfasdf",
+            "expected": "installed",
+            "package": "adfadsf",
+            "score": 100.0
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "lab_id": "testingajah",
+    "criteria": [
+        {
+            "type": "package",
+            "key": "adsfadsf",
+            "description": "adfada",
+            "expected": "installed",
+            "package": "apache2",
+            "score": 100.0
+        }
+    ]
+}

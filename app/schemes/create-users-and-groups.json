@@ -1,0 +1,45 @@
+{
+    "lab_id": "create-users-and-groups",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "user_operator_1",
+            "name": "operator_1",
+            "expected": "exists",
+            "score": 20,
+            "description": "Check if operator_1 is created"
+        },
+        {
+            "type": "user",
+            "key": "user_operator_2",
+            "name": "operator_2",
+            "expected": "exists",
+            "score": 20,
+            "description": "Check if operator_2 is created"
+        },
+        {
+            "type": "user",
+            "key": "user_operator_3",
+            "name": "operator_3",
+            "expected": "exists",
+            "score": 20,
+            "description": "Check if operator_3 is created"
+        },
+        {
+            "type": "group",
+            "key": "group_opps",
+            "name": "opps",
+            "expected": "exists",
+            "score": 20,
+            "description": "Check if group 'opps' exists"
+        },
+        {
+            "type": "group",
+            "key": "group_manage",
+            "name": "manage",
+            "expected": "exists",
+            "score": 20,
+            "description": "Check if group 'manage' exists"
+        }
+    ]
+}

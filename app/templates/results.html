@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grading Results</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .btn-download {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        .btn-download:hover {
+            background-color: #218838;
+        }
+        .filter-form {
+            margin-bottom: 20px;
+        }
+        .filter-form select {
+            padding: 8px;
+            margin-right: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .filter-form button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .filter-form button:hover {
+            background-color: #0056b3;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-delete:hover {
+            background-color: #c82333;
+        }
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .pagination .btn {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        .pagination .btn:hover {
+            background-color: #0056b3;
+        }
+        .pagination span {
+            margin: 0 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Grading Results</h1>
+        <form class="filter-form" method="GET" action="/results">
+            <select name="class_name" id="class_name">
+                <option value="">Select Class</option>
+                <!-- Daftar class_name akan diisi oleh JavaScript -->
+            </select>
+            <select name="lab_id" id="lab_id">
+                <option value="">Select Lab</option>
+                <!-- Daftar lab_id akan diisi oleh JavaScript -->
+            </select>
+            <button type="submit">Filter</button>
+            <button type="button" onclick="resetFilters()">Reset Filter</button>
+        </form>
+
+        <h2>Users Who Have Started Lab</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Class Name</th>
+                    <th>Lab ID</th>
+                    <th>Score</th>
+                    <th>Feedback</th>
+                    <th>Timestamp</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                    <tr>
+                        <td>{{ result.username }}</td>
+                        <td>{{ result.class_name }}</td>
+                        <td>{{ result.lab_id }}</td>
+                        <td>{{ result.score }}</td>
+                        <td>{{ result.feedback }}</td>
+                        <td>{{ result.local_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+			<td>
+			    {{ ((result.duration or 0) // 60)|int }} mins
+			</td>
+
+                        <td>
+                            {% if result.status == "done" %}
+                                <span style="color: green;">Done</span>
+                            {% else %}
+                                <span style="color: orange;">Ongoing</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn-delete" onclick="deleteResult({{ result.id }})">Delete</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="/download-results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}" download="grading_results.csv" class="btn-download">Download Results as CSV</a>
+
+        <h2>Users Who Have Not Started Lab</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Class Name</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users_not_started_lab %}
+                    <tr>
+                        <td>{{ user }}</td>
+                        <td>{{ users | selectattr('username', 'equalto', user) | map(attribute='class_name') | first }}</td>
+                        <td><span style="color: red;">Not Started</span></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            {% if page > 1 %}
+                <a href="/results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}&page={{ page - 1 }}" class="btn">Previous</a>
+            {% endif %}
+            <span>Page {{ page }} of {{ total_pages }}</span>
+            {% if page < total_pages %}
+                <a href="/results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}&page={{ page + 1 }}" class="btn">Next</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Fungsi untuk mengambil daftar filter dari server
+        async function fetchFilters() {
+            const response = await fetch('/get-users-and-labs');
+            const data = await response.json();
+
+            // Isi dropdown class_name
+            const classSelect = document.getElementById('class_name');
+            data.users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.class_name;
+                option.textContent = user.class_name;
+                classSelect.appendChild(option);
+            });
+
+            // Isi dropdown lab_id
+            const labSelect = document.getElementById('lab_id');
+            data.labs.forEach(lab => {
+                const option = document.createElement('option');
+                option.value = lab.lab_id;
+                option.textContent = lab.lab_id;
+                labSelect.appendChild(option);
+            });
+        }
+
+        // Panggil fungsi fetchFilters saat halaman dimuat
+        fetchFilters();
+
+        // Fungsi untuk menghapus hasil grading
+        async function deleteResult(resultId) {
+            if (confirm("Are you sure you want to delete this result?")) {
+                const response = await fetch('/delete-result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: resultId })
+                });
+
+                const result = await response.json();
+                alert(result.message || result.error);
+
+                if (response.ok) {
+                    // Reload halaman setelah menghapus data
+                    window.location.reload();
+                }
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('class_name').value = '';
+            document.getElementById('lab_id').value = '';
+            window.location.href = '/results';  // Reload halaman tanpa filter
+        }
+    </script>
+</body>
+</html>

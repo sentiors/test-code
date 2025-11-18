@@ -1,0 +1,54 @@
+{
+    "lab_id": "dynamic-lab",
+    "criteria": [
+        {
+            "type": "command",
+            "key": "check_hostname",
+            "command": "hostname",
+            "expected": "lab-server",
+            "score": 17,
+            "description": "Check if the hostname is 'lab-server'"
+        },
+        {
+            "type": "file_exists",
+            "key": "check_index_html",
+            "path": "/var/www/html/index.html",
+            "expected": "exists",
+            "score": 17,
+            "description": "Check if index.html exists"
+        },
+        {
+            "type": "file_content",
+            "key": "check_apache_config",
+            "path": "/etc/apache2/apache2.conf",
+            "contains": "KeepAlive On",
+            "score": 17,
+            "description": "Check if Apache config contains 'KeepAlive On'"
+        },
+        {
+            "type": "service",
+            "key": "check_apache_service",
+            "service": "apache2",
+            "expected": "active",
+            "score": 17,
+            "description": "Check if Apache service is active"
+        },
+        {
+            "type": "directory",
+            "key": "check_web_root",
+            "path": "/var/www/html",
+            "expected": "exists",
+            "score": 16,
+            "description": "Check if web root directory exists"
+        },
+        {
+            "type": "config_check",
+            "key": "check_ssh_config",
+            "path": "/etc/ssh/sshd_config",
+            "parameter": "PermitRootLogin",
+            "expected": "no",
+            "score": 16,
+            "description": "Check if SSH config has 'PermitRootLogin no'"
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "lab_id": "h",
+    "criteria": [
+        {
+            "type": "file_exists",
+            "key": "asdfaf",
+            "description": "asdf",
+            "expected": "exists",
+            "path": "asdfasdf",
+            "score": 100.0
+        }
+    ]
+}

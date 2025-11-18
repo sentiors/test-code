@@ -1,0 +1,13 @@
+{
+    "lab_id": "install-net-tools",
+    "criteria": [
+        {
+            "type": "package",
+            "key": "pkg_net_tools",
+            "name": "net-tools",
+            "expected": "installed",
+            "score": 100,
+            "description": "Check if the net-tools package is installed"
+        }
+    ]
+}

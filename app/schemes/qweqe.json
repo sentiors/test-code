@@ -1,0 +1,14 @@
+{
+    "lab_id": "qweqe",
+    "criteria": [
+        {
+            "type": "directory",
+            "key": "rqwerqe",
+            "description": "qwrqwr",
+            "expected": "exists",
+            "path": "qwerq",
+            "contains": "qwrq",
+            "score": 100.0
+        }
+    ]
+}

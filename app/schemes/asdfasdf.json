@@ -1,0 +1,13 @@
+{
+    "lab_id": "asdfasdf",
+    "criteria": [
+        {
+            "type": "group",
+            "key": "asdfadsfadf",
+            "description": "asdfaf",
+            "expected": "exists",
+            "group": "asdfafd",
+            "score": 100.0
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+{
+    "lab_id": "test-user-ini",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "cantik",
+            "expected": "exists",
+            "description": "Cek user cantik ada",
+            "score": 100.0
+        }
+    ]
+}

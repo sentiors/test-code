@@ -1,0 +1,13 @@
+{
+    "lab_id": "test-directory",
+    "criteria": [
+        {
+            "type": "directory",
+            "key": "curl",
+            "description": "check dire",
+            "expected": "exists",
+            "path": "/home/test",
+            "score": 100.0
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "lab_id": "sdfadf",
+    "criteria": [
+        {
+            "type": "package",
+            "key": "asdfasfd",
+            "description": "asdfa",
+            "expected": "installed",
+            "path": "asdfaf",
+            "contains": "adfsafd",
+            "package": "asdfaf",
+            "parameter": "asdfafd",
+            "score": 100.0
+        }
+    ]
+}

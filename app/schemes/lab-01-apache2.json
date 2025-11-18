@@ -1,0 +1,21 @@
+{
+    "lab_id": "lab-01-apache2",
+    "criteria": [
+        {
+            "type": "package",
+            "key": "apache-check",
+            "description": "check apache2 apakah terinstall",
+            "expected": "installed",
+            "package": "apache2",
+            "score": 50.0
+        },
+        {
+            "type": "file_exists",
+            "key": "check-file-apache2",
+            "description": "check apakah file apache2 ada atau tidak",
+            "expected": "exists",
+            "path": "/etc/apache/apache2",
+            "score": 50.0
+        }
+    ]
+}

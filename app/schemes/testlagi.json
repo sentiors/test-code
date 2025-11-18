@@ -1,0 +1,13 @@
+{
+    "lab_id": "testlagi",
+    "criteria": [
+        {
+            "type": "directory",
+            "key": "adfas",
+            "description": "afdasf",
+            "expected": "exists",
+            "path": "asfdasfd",
+            "score": 100.0
+        }
+    ]
+}

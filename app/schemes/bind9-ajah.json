@@ -1,0 +1,21 @@
+{
+    "lab_id": "bind9-ajah",
+    "criteria": [
+        {
+            "type": "package",
+            "key": "bind9-check",
+            "description": "check apakah ada bind9",
+            "expected": "installed",
+            "package": "bind9",
+            "score": 50.0
+        },
+        {
+            "type": "directory",
+            "key": "fasdfas",
+            "description": "check path directory",
+            "expected": "exists",
+            "path": "/etc/bind9",
+            "score": 50.0
+        }
+    ]
+}

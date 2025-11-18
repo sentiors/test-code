@@ -1,0 +1,13 @@
+{
+    "lab_id": "apache",
+    "criteria": [
+        {
+            "type": "service",
+            "key": "apache-check",
+            "description": "check apache",
+            "expected": "active",
+            "service": "apache2",
+            "score": 100.0
+        }
+    ]
+}

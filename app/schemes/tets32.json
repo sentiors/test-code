@@ -1,0 +1,13 @@
+{
+    "lab_id": "tets32",
+    "criteria": [
+        {
+            "type": "file_content",
+            "key": "adfasdadf",
+            "description": "adfads",
+            "path": "adfa",
+            "contains": "afdasdf",
+            "score": 100.0
+        }
+    ]
+}

@@ -1,0 +1,14 @@
+{
+    "lab_id": "asdff",
+    "criteria": [
+        {
+            "type": "config_check",
+            "key": "adfasd",
+            "description": "afdas",
+            "expected": "asdfas",
+            "path": "asfdaf",
+            "parameter": "asfdaf",
+            "score": 100.0
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+{
+    "lab_id": "test-user-imut",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "imut",
+            "expected": "exists",
+            "description": "cek user imut",
+            "score": 100.0
+        }
+    ]
+}

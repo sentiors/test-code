@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheme Editor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f6fa;
+        }
+        .container {
+            max-width: 900px;
+            margin-top: 60px;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            font-weight: 700;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .table thead th {
+            background-color: #007bff !important;
+            color: white !important;
+            text-align: center;
+        }
+        .btn-edit {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .btn-edit:hover {
+            background-color: #e0a800;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-delete:hover {
+            background-color: #bb2d3b;
+        }
+        .btn-add {
+            background-color: #007bff;
+            color: white;
+            font-weight: 500;
+        }
+        .btn-add:hover {
+            background-color: #0069d9;
+        }
+        .btn-result {
+            background-color: #28a745;
+            color: white;
+            font-weight: 500;
+            margin-right: 10px;
+        }
+        .btn-result:hover {
+            background-color: #218838;
+        }
+        table td {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Scheme Lists</h2>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="/results" class="btn btn-result">Lab Result</a>
+            <a href="/add_scheme" class="btn btn-add">Add New Scheme</a>
+        </div>
+        <table class="table table-bordered">
+            <thead>
+                <tr class="table-header">
+                    <th style="width: 70px;">No</th>
+                    <th>Lab Name</th>
+                    <th style="width: 200px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for scheme in schemes %}
+                <tr>
+                    <td class="text-center">{{ loop.index }}</td>
+                    <td>
+                        <a href="/edit_scheme/{{ scheme.lab_id }}" class="text-decoration-none">
+                            {{ scheme.lab_id }}
+                        </a>
+                    </td>
+                    <td class="text-center">
+                        <a href="/edit_scheme/{{ scheme.lab_id }}" class="btn btn-sm btn-edit">Edit</a>
+                        <button class="btn btn-sm btn-delete" onclick="deleteScheme('{{ scheme.lab_id }}')">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+        function deleteScheme(lab_id) {
+            fetch(`/delete_scheme/${lab_id}`, {
+                method: 'DELETE'
+            }).then(response => response.json())
+              .then(data => {
+                  alert(data.message);
+                  window.location.reload();
+              });
+        }
+    </script>
+</body>
+</html>

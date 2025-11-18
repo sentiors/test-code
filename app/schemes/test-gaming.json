@@ -1,0 +1,12 @@
+{
+    "lab_id": "test-gaming",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "asdfasdf",
+            "description": "asdfasdf",
+            "expected": "exists",
+            "score": 100.0
+        }
+    ]
+}

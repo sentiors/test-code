@@ -1,0 +1,13 @@
+{
+    "lab_id": "asdfaf",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "dfasf",
+            "description": "adsfadsf",
+            "expected": "exists",
+            "user": "afds",
+            "score": 100.0
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "lab_id": "test-usercreate",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "user_create",
+            "description": "check apakah user 'test' ada",
+            "expected": "exists",
+            "user": "test",
+            "score": 100.0
+        }
+    ]
+}

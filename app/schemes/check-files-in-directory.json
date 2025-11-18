@@ -1,0 +1,37 @@
+{
+    "lab_id": "check-files-in-directory",
+    "criteria": [
+        {
+            "type": "directory",
+            "key": "dir_lab05",
+            "path": "/home/lab-05",
+            "expected": "exists",
+            "score": 20,
+            "description": "Check if the directory /home/lab-05 exists"
+        },
+        {
+            "type": "file_exists",
+            "key": "file_index_txt",
+            "path": "/home/lab-05/index.txt",
+            "expected": "exists",
+            "score": 30,
+            "description": "Check if index.txt exists in /home/lab-05"
+        },
+        {
+            "type": "file_exists",
+            "key": "file_readme_txt",
+            "path": "/home/lab-05/readme.txt",
+            "expected": "exists",
+            "score": 25,
+            "description": "Check if readme.txt exists in /home/lab-05"
+        },
+        {
+            "type": "file_exists",
+            "key": "file_config_ini",
+            "path": "/home/lab-05/config.ini",
+            "expected": "exists",
+            "score": 25,
+            "description": "Check if config.ini exists in /home/lab-05"
+        }
+    ]
+}

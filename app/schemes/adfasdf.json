@@ -1,0 +1,13 @@
+{
+    "lab_id": "adfasdf",
+    "criteria": [
+        {
+            "type": "directory",
+            "key": "afdsf",
+            "description": "asdfasdf",
+            "expected": "exists",
+            "path": "adsfadf",
+            "score": 100.0
+        }
+    ]
+}

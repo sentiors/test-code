@@ -1,0 +1,13 @@
+{
+    "lab_id": "n",
+    "criteria": [
+        {
+            "type": "service",
+            "key": "adsf",
+            "description": "asdfa",
+            "expected": "active",
+            "service": "adfadf",
+            "score": 100.0
+        }
+    ]
+}

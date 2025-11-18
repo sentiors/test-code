@@ -1,0 +1,13 @@
+{
+    "lab_id": "afdag",
+    "criteria": [
+        {
+            "type": "file_exists",
+            "key": "adfasdf",
+            "description": "asdfasfdsa",
+            "expected": "exists",
+            "path": "asdfasfdasfd",
+            "score": 100.0
+        }
+    ]
+}

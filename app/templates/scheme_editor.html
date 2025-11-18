@@ -1,0 +1,418 @@
+kini codingan lama
+tiyo@server:/opt/grading/app/templates$ cat scheme_editor.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheme Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+                body {
+            font-family: 'Poppins', sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .criteria {
+            margin-bottom: 20px;
+        }
+        .criteria-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background-color: #fff;
+            position: relative;
+        }
+        .criteria-item h3 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .remove-btn:hover {
+            background-color: #c82333;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            display: none;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .preview {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+        .preview h2 {
+            margin-top: 0;
+            font-size: 20px;
+            color: #333;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Schemessss Editor</h1>
+    <div class="message" id="message"></div>
+    <form id="scheme-form">
+        <div class="form-group">
+            <label for="lab_id">Lab ID:</label>
+            <input type="text" id="lab_id" name="lab_id" required oninput="updatePreview()">
+        </div>
+        <div class="criteria" id="criteria-list">
+            <!-- Kriteria akan ditambahkan di sini -->
+        </div>
+        <button type="button" class="btn" onclick="addCriterion()">Add Criterion</button>
+        <button type="submit" class="btn">Save Scheme</button>
+    </form>
+
+    <div class="preview" id="preview">
+        <h2>Preview Scheme</h2>
+        <pre id="preview-content"></pre>
+    </div>
+
+    <script>
+        let criterionCount = 0;
+
+        function addCriterion() {
+            criterionCount++;
+            const criteriaList = document.getElementById('criteria-list');
+            const criterionItem = document.createElement('div');
+            criterionItem.className = 'criteria-item';
+            criterionItem.innerHTML = `
+                <h3>Criterion ${criterionCount}</h3>
+                <button type="button" class="remove-btn" onclick="removeCriterion(this)">Remove</button>
+                <div class="form-group">
+                    <label for="type${criterionCount}">Type:</label>
+                    <select id="type${criterionCount}" name="type${criterionCount}" required onchange="updateCriterionFields(${criterionCount}); updatePreview();">
+                        <option value="command">Command</option>
+                        <option value="file_exists">File Exists</option>
+                        <option value="file_content">File Content</option>
+                        <option value="service">Service</option>
+                        <option value="directory">Directory</option>
+                        <option value="config_check">Config Check</option>
+                        <option value="package">Package</option>
+                        <option value="user">User</option>
+                        <option value="group">Group</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="key${criterionCount}">Key:</label>
+                    <input type="text" id="key${criterionCount}" name="key${criterionCount}" required oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label for="description${criterionCount}">Question:</label>
+                    <textarea id="description${criterionCount}" name="description${criterionCount}" required oninput="updatePreview()"></textarea>
+                </div>
+                <div class="form-group" id="command-group${criterionCount}" style="display: none;">
+                    <label for="command${criterionCount}">Command:</label>
+                    <input type="text" id="command${criterionCount}" name="command${criterionCount}" oninput="updatePreview()">
+                </div>
+                <div class="form-group" id="expected-select-group${criterionCount}" style="display: none;">
+                    <label for="expected-select${criterionCount}">Expected Value:</label>
+                    <select id="expected-select${criterionCount}" name="expected-select${criterionCount}" onchange="updatePreview()">
+                        <!-- Opsi akan diisi berdasarkan jenis kriteria -->
+                    </select>
+                </div>
+                <div class="form-group" id="expected-input-group${criterionCount}" style="display: none;">
+                    <label for="expected-input${criterionCount}">Expected Value:</label>
+                    <input type="text" id="expected-input${criterionCount}" name="expected-input${criterionCount}" oninput="updatePreview()">
+                </div>
+                <div class="form-group" id="path-group${criterionCount}" style="display: none;">
+                    <label for="path${criterionCount}">Path:</label>
+                    <input type="text" id="path${criterionCount}" name="path${criterionCount}" oninput="updatePreview()">
+                </div>
+                <div class="form-group" id="contains-group${criterionCount}" style="display: none;">
+                    <label for="contains${criterionCount}">Contains:</label>
+                    <input type="text" id="contains${criterionCount}" name="contains${criterionCount}" oninput="updatePreview()">
+                </div>
+                <div class="form-group" id="service-group${criterionCount}" style="display: none;">
+                    <label for="service${criterionCount}">Service Name:</label>
+                    <input type="text" id="service${criterionCount}" name="service${criterionCount}" oninput="updatePreview()">
+                </div>
+                <div class="form-group" id="package-group${criterionCount}" style="display: none;">
+                    <label for="package${criterionCount}">Package Name:</label>
+                    <input type="text" id="package${criterionCount}" name="package${criterionCount}" oninput="updatePreview()">
+                </div>
+                <div class="form-group" id="user-group${criterionCount}" style="display: none;">
+                    <label for="user${criterionCount}">Username:</label>
+                    <input type="text" id="user${criterionCount}" name="user${criterionCount}" oninput="updatePreview()">
+                </div>
+                <div class="form-group" id="group-group${criterionCount}" style="display: none;">
+                    <label for="group${criterionCount}">Group Name:</label>
+                    <input type="text" id="group${criterionCount}" name="group${criterionCount}" oninput="updatePreview()">
+                </div>
+                <div class="form-group" id="parameter-group${criterionCount}" style="display: none;">
+                    <label for="parameter${criterionCount}">Parameter:</label>
+                    <input type="text" id="parameter${criterionCount}" name="parameter${criterionCount}" oninput="updatePreview()">
+                </div>
+            `;
+            criteriaList.appendChild(criterionItem);
+            updateCriterionFields(criterionCount);
+            updatePreview();
+        }
+
+        function removeCriterion(button) {
+            const criterionItem = button.parentElement;
+            criterionItem.remove();
+            updatePreview();
+        }
+
+function updateCriterionFields(id) {
+    const type = document.getElementById(`type${id}`).value;
+    const expectedSelect = document.getElementById(`expected-select${id}`);
+    const expectedInput = document.getElementById(`expected-input${id}`);
+
+    // Kosongkan opsi yang ada
+    expectedSelect.innerHTML = '';
+
+    // Tampilkan atau sembunyikan field berdasarkan tipe kriteria
+    if (type === 'command' || type === 'config_check') {
+        document.getElementById(`expected-select-group${id}`).style.display = 'none';
+        document.getElementById(`expected-input-group${id}`).style.display = 'block';
+    } else {
+        document.getElementById(`expected-select-group${id}`).style.display = 'block';
+        document.getElementById(`expected-input-group${id}`).style.display = 'none';
+
+        // Tambahkan opsi berdasarkan jenis kriteria
+        if (type === 'file_exists') {
+            expectedSelect.innerHTML = `
+                <option value="exists">Exists</option>
+                <option value="deleted">Deleted</option>
+            `;
+        } else if (type === 'service') {
+            expectedSelect.innerHTML = `
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            `;
+        } else if (type === 'directory') {
+            expectedSelect.innerHTML = `
+                <option value="exists">Exists</option>
+            `;
+        } else if (type === 'package') {
+            expectedSelect.innerHTML = `
+                <option value="installed">Installed</option>
+                <option value="not_installed">Not Installed</option>
+            `;
+        } else if (type === 'user') {
+            expectedSelect.innerHTML = `
+                <option value="exists">Exists</option>
+            `;
+        } else if (type === 'group') {
+            expectedSelect.innerHTML = `
+                <option value="exists">Exists</option>
+            `;
+        } else {
+            expectedSelect.innerHTML = `
+                <option value="">Select Expected Value</option>
+            `;
+        }
+    }
+
+    // Tampilkan atau sembunyikan field lainnya berdasarkan tipe kriteria
+    document.getElementById(`path-group${id}`).style.display = type === 'file_exists' || type === 'file_content' || type === 'directory' || type === 'config_check' ? 'block' : 'none';
+    document.getElementById(`contains-group${id}`).style.display = type === 'file_content' ? 'block' : 'none';
+    document.getElementById(`service-group${id}`).style.display = type === 'service' ? 'block' : 'none';
+    document.getElementById(`package-group${id}`).style.display = type === 'package' ? 'block' : 'none';
+    document.getElementById(`user-group${id}`).style.display = type === 'user' ? 'block' : 'none';
+    document.getElementById(`group-group${id}`).style.display = type === 'group' ? 'block' : 'none';
+    document.getElementById(`parameter-group${id}`).style.display = type === 'config_check' ? 'block' : 'none';
+    document.getElementById(`command-group${id}`).style.display = type === 'command' ? 'block' : 'none';
+    updatePreview();
+}
+function updatePreview() {
+    const labId = document.getElementById('lab_id').value;
+    const criteria = [];
+
+    for (let i = 1; i <= criterionCount; i++) {
+        const criterionItem = document.querySelector(`#criteria-list .criteria-item:nth-child(${i})`);
+        if (!criterionItem) continue;
+
+        const type = criterionItem.querySelector(`#type${i}`).value;
+        const key = criterionItem.querySelector(`#key${i}`).value;
+        const description = criterionItem.querySelector(`#description${i}`).value;
+        const expectedSelect = criterionItem.querySelector(`#expected-select${i}`)?.value;
+        const expectedInput = criterionItem.querySelector(`#expected-input${i}`)?.value;
+        const expected = type === 'command' || type === 'config_check' ? expectedInput : expectedSelect;
+        const path = criterionItem.querySelector(`#path${i}`)?.value;
+        const contains = criterionItem.querySelector(`#contains${i}`)?.value;
+        const service = criterionItem.querySelector(`#service${i}`)?.value;
+        const package = criterionItem.querySelector(`#package${i}`)?.value;
+        const user = criterionItem.querySelector(`#user${i}`)?.value;
+        const group = criterionItem.querySelector(`#group${i}`)?.value;
+        const parameter = criterionItem.querySelector(`#parameter${i}`)?.value;
+        const command = criterionItem.querySelector(`#command${i}`)?.value;
+
+        const criterion = {
+            type,
+            key,
+            description,
+            expected,
+            path,
+            contains,
+            service,
+            package,
+            user,
+            group,
+            parameter,
+            command
+        };
+
+        // Hapus properti yang tidak diperlukan
+        Object.keys(criterion).forEach(key => {
+            if (criterion[key] === undefined || criterion[key] === "") {
+                delete criterion[key];
+            }
+        });
+
+        criteria.push(criterion);
+    }
+
+    const scheme = {
+        lab_id: labId,
+        criteria
+    };
+
+    document.getElementById('preview-content').textContent = JSON.stringify(scheme, null, 2);
+}
+
+
+document.getElementById('scheme-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const labId = document.getElementById('lab_id').value;
+    const criteria = [];
+
+    for (let i = 1; i <= criterionCount; i++) {
+        const criterionItem = document.querySelector(`#criteria-list .criteria-item:nth-child(${i})`);
+        if (!criterionItem) continue;
+
+        const type = criterionItem.querySelector(`#type${i}`).value;
+        const key = criterionItem.querySelector(`#key${i}`).value;
+        const description = criterionItem.querySelector(`#description${i}`).value;
+        const expectedSelect = criterionItem.querySelector(`#expected-select${i}`)?.value;
+        const expectedInput = criterionItem.querySelector(`#expected-input${i}`)?.value;
+        const expected = type === 'command' || type === 'config_check' ? expectedInput : expectedSelect;
+        const path = criterionItem.querySelector(`#path${i}`)?.value;
+        const contains = criterionItem.querySelector(`#contains${i}`)?.value;
+        const service = criterionItem.querySelector(`#service${i}`)?.value;
+        const package = criterionItem.querySelector(`#package${i}`)?.value;
+        const user = criterionItem.querySelector(`#user${i}`)?.value;
+        const group = criterionItem.querySelector(`#group${i}`)?.value;
+        const parameter = criterionItem.querySelector(`#parameter${i}`)?.value;
+        const command = criterionItem.querySelector(`#command${i}`)?.value;
+
+        const criterion = {
+            type,
+            key,
+            description,
+            expected,
+            path,
+            contains,
+            service,
+            package,
+            user,
+            group,
+            parameter,
+            command
+        };
+
+        // Hapus properti yang tidak diperlukan
+        Object.keys(criterion).forEach(key => {
+            if (criterion[key] === undefined || criterion[key] === "") {
+                delete criterion[key];
+            }
+        });
+
+        criteria.push(criterion);
+    }
+
+    const response = await fetch('/create-scheme', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            lab_id: labId,
+            criteria
+        })
+    });
+
+    const result = await response.json();
+    const messageDiv = document.getElementById('message');
+    if (response.ok) {
+        messageDiv.className = 'message success';
+        messageDiv.textContent = result.message;
+
+        // Reset form
+        document.getElementById('scheme-form').reset();
+
+        // Hapus semua kriteria yang ditambahkan
+        const criteriaList = document.getElementById('criteria-list');
+        criteriaList.innerHTML = '';
+
+        // Reset counter
+        criterionCount = 0;
+
+        // Refresh halaman setelah 1 detik
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    } else {
+        messageDiv.className = 'message error';
+        messageDiv.textContent = result.error || 'Failed to create scheme';
+    }
+    messageDiv.style.display = 'block';
+});
+    </script>
+</body>
+</html>
+

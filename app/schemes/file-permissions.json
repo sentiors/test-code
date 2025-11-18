@@ -1,0 +1,32 @@
+{
+    "lab_id": "file-permissions",
+    "criteria": [
+        {
+            "type": "config_check",
+            "key": "file_test_txt",
+            "path": "/home/lab-06/test.txt",
+            "parameter": "owner",
+            "expected": "jawir",
+            "score": 30,
+            "description": "Check if test.txt is owned by 'jawir'"
+        },
+        {
+            "type": "config_check",
+            "key": "file_test_txt_group",
+            "path": "/home/lab-06/test.txt",
+            "parameter": "group",
+            "expected": "admin",
+            "score": 30,
+            "description": "Check if test.txt group is 'admin'"
+        },
+        {
+            "type": "config_check",
+            "key": "file_test_txt_permissions",
+            "path": "/home/lab-06/test.txt",
+            "parameter": "permissions",
+            "expected": "rwxr-x---",
+            "score": 40,
+            "description": "Check if test.txt has the correct permissions"
+        }
+    ]
+}

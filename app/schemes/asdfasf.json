@@ -1,0 +1,13 @@
+{
+    "lab_id": "asdfasf",
+    "criteria": [
+        {
+            "type": "file_content",
+            "key": "asfasfd",
+            "description": "asdfa",
+            "path": "adsfasd",
+            "contains": "afdasf",
+            "score": 100.0
+        }
+    ]
+}
