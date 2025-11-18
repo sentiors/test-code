@@ -629,12 +629,17 @@ def scheme_editor():
 
 @app.route('/create_scheme', methods=['GET', 'POST'])
 def create_scheme():
-    types = ["command", "file_exists", "service", "user"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group"]
     expected = {
-        "command": ["true", "talse"],
+        "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
+        "file_content": ["contains"],
         "service": ["active", "inactive"],
-	"user": ["exists", "deleted"]
+        "directory": ["exists"],
+        "config_check": ["correct"],
+        "package": ["installed"],
+        "user": ["exists", "deleted"],
+        "group": ["exists", "deleted"]
     }
 
     if request.method == "GET":
@@ -733,6 +738,32 @@ def edit_scheme():
         db_session.rollback()
         return jsonify({"error": "Failed to edit scheme", "details": str(e)}), 500
 
+@app.route('/edit_scheme/<lab_id>', methods=['GET'])
+def edit_scheme_page(lab_id):
+    scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
+    if not os.path.exists(scheme_file):
+        return "Scheme not found", 404
+
+    with open(scheme_file, "r") as f:
+        scheme = json.load(f)
+
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group"]
+
+    expected = {
+        "command": ["true", "false"],
+        "file_exists": ["exists", "deleted"],
+        "file_content": ["contains"],
+        "service": ["active", "inactive"],
+        "directory": ["exists"],
+        "config_check": ["correct"],
+        "package": ["installed"],
+        "user": ["exists", "deleted"],
+        "group": ["exists", "deleted"]
+    }
+
+    return render_template("edit_scheme.html", scheme=scheme, types=types, expected=expected)
+
+
 @app.route('/delete_scheme', methods=['POST'])
 def delete_scheme():
     try:
@@ -802,13 +833,19 @@ def home():
 
 @app.route('/add_scheme')
 def add_scheme():
-    types = ["command", "file_exists", "service", "user"]  # sesuaikan dengan tipe yang kamu pakai
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group"]
     expected = {
         "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
+        "file_content": ["contains"],
         "service": ["active", "inactive"],
-	"user": ["exists", "deleted"]
+        "directory": ["exists"],
+        "config_check": ["correct"],
+        "package": ["installed"],
+        "user": ["exists", "deleted"],
+        "group": ["exists", "deleted"]
     }
+
     return render_template('add_scheme.html', types=types, expected=expected)
 
 
