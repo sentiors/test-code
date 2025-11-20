@@ -155,6 +155,10 @@ def get_scheme():
 
     return jsonify({"scheme": scheme}), 200
 
+from datetime import datetime
+import pytz
+wib = pytz.timezone("Asia/Jakarta")
+
 @app.route('/grade-lab', methods=['POST'])
 def grade_lab():
     try:
@@ -168,6 +172,9 @@ def grade_lab():
         lab_id = data.get("lab_id")
         class_name = data.get("class_name")  # Ambil class_name dari payload
         client_data = data.get("client_data", {})
+
+        lab_log_path = f"/var/log/nusactl/labs/{lab_id}.log"
+        os.makedirs(os.path.dirname(lab_log_path), exist_ok=True)
 
         if not lab_id or not class_name:  # Pastikan lab_id dan class_name ada
             return jsonify({"error": "lab_id and class_name are required"}), 400
@@ -211,6 +218,8 @@ def grade_lab():
                     total_score += score
                 else:
                     feedback.append(f"{description}: Failed")
+                    with open(lab_log_path, 'a') as logfile:
+                        logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
             elif ctype == "file_exists":
                 if expected == "deleted" and actual_value == "deleted":
                     total_score += score
@@ -218,42 +227,58 @@ def grade_lab():
                     total_score += score
                 else:
                     feedback.append(f"{description}: Failed")
+                    with open(lab_log_path, 'a') as logfile:
+                        logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
             elif ctype == "file_content":
                 contains = criterion.get("contains")
                 if contains and contains in actual_value:
                     total_score += score
                 else:
                     feedback.append(f"{description}: Failed")
+                    with open(lab_log_path, 'a') as logfile:
+                        logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
             elif ctype == "service":
                 if expected == "active" and actual_value == "active":
                     total_score += score
                 else:
                     feedback.append(f"{description}: Failed")
+                    with open(lab_log_path, 'a') as logfile:
+                        logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
             elif ctype == "directory":
                 if expected == "exists" and actual_value == "exists":
                     total_score += score
                 else:
                     feedback.append(f"{description}: Failed")
+                    with open(lab_log_path, 'a') as logfile:
+                        logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
             elif ctype == "config_check":
                 if expected and actual_value == "correct":
                     total_score += score
                 else:
                     feedback.append(f"{description}: Failed")
+                    with open(lab_log_path, 'a') as logfile:
+                        logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
             elif ctype == "package":
                 if expected == "installed" and actual_value == "installed":
                     total_score += score
                 else:
                     feedback.append(f"{description}: Failed")
+                    with open(lab_log_path, 'a') as logfile:
+                        logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
             elif ctype == "user":
                 if expected == "exists" and actual_value == "exists":
                     total_score += score
                 else:
                     feedback.append(f"{description}: Failed")
+                    with open(lab_log_path, 'a') as logfile:
+                        logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
             elif ctype == "group":
                 if expected == "exists" and actual_value == "exists":
                     total_score += score
                 else:
                     feedback.append(f"{description}: Failed")
+                    with open(lab_log_path, 'a') as logfile:
+                        logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
             else:
                 feedback.append(f"Unsupported criterion type: {ctype}")
 
@@ -263,9 +288,9 @@ def grade_lab():
         # Cobalah untuk menyimpan hasil grading ke database
         try:
             start_time = active_lab.get("start_time")
-            from datetime import datetime
-            import pytz
-            wib = pytz.timezone("Asia/Jakarta")
+            #from datetime import datetime
+            #import pytz
+            #wib = pytz.timezone("Asia/Jakarta")
             end_time = datetime.now(wib)
             duration = (end_time - start_time).total_seconds() if start_time else None
 
@@ -296,8 +321,19 @@ def grade_lab():
             print(f"Database Error: {str(db_error)}")  # Log error, rollback database transaksi
             db_session.rollback()
 
+            #print(f'[DEBUG] Feedback to client: {feedback} (type={type(feedback)})')
+            #print("[DEBUG] Feedback list sebelum return:", feedback)
+            #print("[DEBUG] Feedback AKHIR:", feedback, type(feedback))
         # Nilai score tetap dikembalikan meskipun ada error pada penyimpanan database
-        return jsonify({"score": total_score, "feedback": feedback, "duration": duration, "penalty": penalty_messages,}), 200
+        #return jsonify({"score": total_score, "feedback": feedback, "log_path": lab_log_path, "duration": duration, "penalty": penalty_messages,}), 200
+        return jsonify({
+            "score": total_score if total_score is not None else 0,
+            "feedback": feedback if isinstance(feedback, list) else [],
+            "log_path": lab_log_path,
+            "duration": duration if duration is not None else 0,
+            "penalty": penalty_messages
+        }), 200
+
 
     except json.JSONDecodeError as e:
         print(f"JSON Decode Error: {str(e)}")  # Debugging
@@ -865,6 +901,19 @@ def add_scheme():
 #        'command': []
 #    }
 #    return render_template('add_scheme.html')
+
+@app.route('/get-log', methods=['GET'])
+def get_log():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    lab_id = request.args.get("lab_id")
+    # Validasi token/lab jika perlu, misal: cek user, cek status lab
+    log_path = f"/var/log/nusactl/labs/{lab_id}.log"
+    try:
+        with open(log_path, "r") as f:
+            content = f.read()
+        return jsonify({"content": content}), 200
+    except Exception as e:
+        return jsonify({"error": f"Log not found: {str(e)}"}), 404
 
 if __name__ == "__main__":
     init_db()

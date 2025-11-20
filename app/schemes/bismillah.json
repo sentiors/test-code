@@ -1,0 +1,12 @@
+{
+    "lab_id": "bismillah",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "sila-coba-abc-123",
+            "expected": "exists",
+            "description": "cek user",
+            "score": 100.0
+        }
+    ]
+}
