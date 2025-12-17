@@ -1,0 +1,30 @@
+{
+  "lab_id": "OSADM-009-3",
+  "description": "Create CI/CD pipeline with docker runner to build image lab93-web-kelompokX:latest and run container",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "repo_apps_ok",
+      "description": "Repository lokal apps-kelompokX sudah di-clone dan remote origin mengarah ke apps-kelompokX di GitLab",
+      "score": 30,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "ci_files_apps_ok",
+      "description": "File Dockerfile, index.html, dan .gitlab-ci.yml di apps-kelompokX sesuai spesifikasi lab 9.3 (build + test container)",
+      "score": 40,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "image_lab93_ok",
+      "description": "Pipeline berhasil membuild image di node1 (docker image ls)",
+      "score": 30,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    }
+  ]
+}

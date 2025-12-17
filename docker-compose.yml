@@ -3,10 +3,23 @@ version: "3.8"
 services:
   web:
     build: .
+    image: grading-web:local
     container_name: grading-web
     ports:
-      - "8000:8000"        # host:container
+      - "8001:8000"        # host:container
     volumes:
       - ./db.sqlite:/opt/grading/db.sqlite   # pakai file db dari host
       - ./logs:/opt/grading/logs            # kalau mau log keluar ke host
+      - /opt/grading/app:/opt/grading/app
+      - /opt/grading/app/schemes:/opt/grading/app/schemes
+      - /opt/grading/app/api.py:/opt/grading/app/api.py:ro
     restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - grading-net
+
+networks:
+  grading-net:
+    name: grading-net
+

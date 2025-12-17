@@ -1,0 +1,21 @@
+{
+  "lab_id": "OSADM-004-3",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "vol_horizon_created_attached_ok",
+      "expected": "OK",
+      "description": "Volume 3GB dengan nama vol-horizon-kelompokX-sijaX sudah dibuat dan ter-attach ke noble-horizon-ins-kelompokX-sijaX pada /dev/vdb",
+      "score": 50,
+      "command": "openstack volume show vol-horizon-PLACEHOLDER-sijax -f json"
+    },
+    {
+      "type": "command",
+      "key": "fs_horizon_mounted_ok",
+      "expected": "OK",
+      "description": "Volume /dev/vdb hasil GUI sudah diformat ext4 dan di-mount ke /data di dalam noble-horizon-ins-kelompokX-sijaX",
+      "score": 50,
+      "command": "ssh -o StrictHostKeyChecking=no ubuntu@FIP_PLACEHOLDER sudo lsblk -f"
+    }
+  ]
+}

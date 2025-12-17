@@ -1,0 +1,45 @@
+{
+  "lab_id": "OSADM-QUIZ-004-1",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "vol_2048_created_ok",
+      "expected": "OK",
+      "description": "Volume vol-2048-kelompokX-sijaX ukuran 2GB sudah dibuat",
+      "score": 20,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "backup_mapped_and_copied_ok",
+      "expected": "OK",
+      "description": "Volume vol-2048-kelompokX-sijaX sudah di-mount ke /backup/kelompokXsijaX dan isi /var/www/kelompokXsijaX sudah tersalin",
+      "score": 20,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "snapshots_created_ok",
+      "expected": "OK",
+      "description": "Snapshot instance dan volume sudah dibuat",
+      "score": 20,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "rescue_vm_and_volume_ok",
+      "expected": "OK",
+      "description": "VM rescue dan volume snapshot sudah dibuat dan di-mount",
+      "score": 20,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "nginx_root_and_app_ok",
+      "expected": "OK",
+      "description": "NGINX root sudah diarahkan ke /backup/kelompokXsijaX dan aplikasi bisa diakses lewat Floating IP lama",
+      "score": 20,
+      "command": "echo OK"
+    }
+  ]
+}

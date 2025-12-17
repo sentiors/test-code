@@ -1,0 +1,13 @@
+{
+    "lab_id": "putra1",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "putra111",
+            "expected": "exists",
+            "description": "cek user putrs",
+            "score": 100.0,
+            "cleanup": false
+        }
+    ]
+}

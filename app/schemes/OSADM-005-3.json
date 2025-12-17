@@ -1,0 +1,37 @@
+{
+  "lab_id": "OSADM-005-3",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "ssh_daemon_two_ports_ok",
+      "expected": "OK",
+      "description": "SSH daemon di HAProxy listen di port 22 dan 2222",
+      "score": 25,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "security_group_2222_ok",
+      "expected": "OK",
+      "description": "Security group membuka port TCP 2222 untuk administrasi HAProxy",
+      "score": 25,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "haproxy_ssh_lb_config_ok",
+      "expected": "OK",
+      "description": "Konfigurasi HAProxy memiliki frontend ssh_front dan backend ssh_back untuk TCP 22",
+      "score": 25,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "haproxy_ssh_lb_working_ok",
+      "expected": "OK",
+      "description": "Koneksi SSH ke FIP HAProxy diarahkan ke salah satu backend (stick-table aktif)",
+      "score": 25,
+      "command": "echo OK"
+    }
+  ]
+}

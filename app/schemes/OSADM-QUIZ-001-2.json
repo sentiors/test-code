@@ -1,0 +1,29 @@
+{
+  "lab_id": "OSADM-QUIZ-001-2",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "quiz_image_deleted",
+      "expected": "OK",
+      "description": "Cek image quiz 001-1 sudah dihapus",
+      "score": 34,
+      "command": "openstack image list -f value -c Name"
+    },
+    {
+      "type": "command",
+      "key": "quiz_flavor_deleted",
+      "expected": "OK",
+      "description": "Cek flavor quiz 001-1 sudah dihapus",
+      "score": 33,
+      "command": "openstack flavor list -f value -c Name"
+    },
+    {
+      "type": "command",
+      "key": "quiz_keypair_deleted",
+      "expected": "OK",
+      "description": "Cek keypair quiz 001-1 sudah dihapus",
+      "score": 33,
+      "command": "openstack keypair list -f value -c Name"
+    }
+  ]
+}

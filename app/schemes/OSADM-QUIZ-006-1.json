@@ -1,0 +1,29 @@
+{
+  "lab_id": "OSADM-QUIZ-006-1",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "stack_name_ok",
+      "description": "Stack autoscaling quiz sudah ada dan COMPLETE",
+      "score": 30,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "stack_events_scale_ok_quiz",
+      "description": "Event stack punya minimal 1 SIGNAL_COMPLETE scale out dan 1 scale in",
+      "score": 40,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "autoscaling_quiz_config_ok",
+      "description": "max_size=2 dan threshold CPU high/low sesuai untuk QUIZ",
+      "score": 30,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    }
+  ]
+}

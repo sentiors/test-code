@@ -1,0 +1,37 @@
+{
+  "lab_id": "OSADM-QUIZ-008-1",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "featureb_branch_remote_ok",
+      "description": "Branch featureb-kelompokX sudah dibuat dan di-push ke remote origin",
+      "score": 30,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "merge_featureb_to_main_ok",
+      "description": "Branch featureb-kelompokX sudah di-merge ke main dan di-push ke origin/main",
+      "score": 30,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "quiz_conflict_resolved_ok",
+      "description": "README.md sudah bebas conflict marker dan berisi hasil merge akhir sesuai kesepakatan tim",
+      "score": 25,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "quiz_history_merge_and_resolve_ok",
+      "description": "Riwayat commit mengandung commit merge dan commit resolve conflict di README.md",
+      "score": 15,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    }
+  ]
+}

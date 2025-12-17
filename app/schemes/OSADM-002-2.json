@@ -1,0 +1,88 @@
+{
+  "lab_id": "OSADM-002-2",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "internal_net_name_ok",
+      "expected": "OK",
+      "description": "Internal network internal-net-kelompokX-sijaX sudah dibuat",
+      "score": 10,
+      "command": "openstack network list -f value -c Name"
+    },
+    {
+      "type": "command",
+      "key": "internal_subnet_cidr_ok",
+      "expected": "OK",
+      "description": "Subnet internal-subnet-kelompokX-sijaX punya CIDR 192.20.X.0/24",
+      "score": 10,
+      "command": "openstack subnet show internal-subnet-kelompokX-sijaX -f json"
+    },
+    {
+      "type": "command",
+      "key": "internal_subnet_pool_ok",
+      "expected": "OK",
+      "description": "Allocation pool dan gateway internal sesuai ketentuan",
+      "score": 10,
+      "command": "openstack subnet show internal-subnet-kelompokX-sijaX -f json"
+    },
+    {
+      "type": "command",
+      "key": "internal_net_binding_ok",
+      "expected": "OK",
+      "description": "Subnet terasosiasi dengan internal-net-kelompokX-sijaX",
+      "score": 5,
+      "command": "openstack subnet show internal-subnet-kelompokX-sijaX -f json"
+    },
+
+    {
+      "type": "command",
+      "key": "router_name_ok",
+      "expected": "OK",
+      "description": "Router router-kelompokX-sijaX sudah dibuat",
+      "score": 5,
+      "command": "openstack router list -f value -c Name"
+    },
+    {
+      "type": "command",
+      "key": "router_ext_gw_ok",
+      "expected": "OK",
+      "description": "Router punya external gateway ke external-net-sija dengan fixed IP sesuai range kelompok",
+      "score": 10,
+      "command": "openstack router show router-kelompokX-sijaX -f json"
+    },
+    {
+      "type": "command",
+      "key": "router_internal_iface_ok",
+      "expected": "OK",
+      "description": "Router terhubung ke internal-subnet-kelompokX-sijaX",
+      "score": 10,
+      "command": "openstack router show router-kelompokX-sijaX -f json"
+    },
+
+    {
+      "type": "command",
+      "key": "floating_ip_ok",
+      "expected": "OK",
+      "description": "Ada Floating IP dari range kelompok di external-net-sija",
+      "score": 10,
+      "command": "openstack floating ip list -f json"
+    },
+
+    {
+      "type": "command",
+      "key": "secgroup_name_ok",
+      "expected": "OK",
+      "description": "Security group security-group-kelompokX-sijaX sudah dibuat",
+      "score": 5,
+      "command": "openstack security group list -f value -c Name"
+    },
+    {
+      "type": "command",
+      "key": "secgroup_rules_ok",
+      "expected": "OK",
+      "description": "Security group punya rule ICMP dan TCP/22 ingress",
+      "score": 15,
+      "command": "openstack security group rule list security-group-kelompokX-sijaX -f json"
+    }
+  ]
+}

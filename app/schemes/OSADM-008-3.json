@@ -1,0 +1,21 @@
+{
+  "lab_id": "OSADM-008-3",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "commit_message_ok",
+      "description": "HEAD main di node1 punya history yang mengandung commit message \"Add multiple files (file1, file2, file3) kelompokX sijaX\"",
+      "score": 50,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "remote_files_ok",
+      "description": "Clone verify-dir-0083 berisi README.md, file1.txt, file2.txt, file3.txt",
+      "score": 50,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    }
+  ]
+}

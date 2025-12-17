@@ -4,3 +4,4 @@ flask
 gunicorn
 pytz
 sqlalchemy
+requests

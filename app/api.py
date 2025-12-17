@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify, render_template, make_response 
+from flask import Flask, request, jsonify, render_template, make_response
 import os
 import json
+from .utils import check_gitlab_pipeline
 from .database import db_session, init_db
 from .models import User, Lab, GradingResult
 from datetime import datetime
@@ -9,11 +10,66 @@ wib = pytz.timezone("Asia/Jakarta")
 timestamp = datetime.now(wib)
 import csv
 from io import StringIO
+import subprocess
 
 app = Flask(__name__)
 
 SCHEME_PATH = "/opt/grading/app/schemes/"
+GITLAB_URL = "https://gitlab.smkn1cibinong.sch.id"
 ACTIVE_LABS = {}
+
+def get_latest_pipeline(project_id, ref="main"):
+    url = f"{GITLAB_URL}/api/v4/projects/{project_id}/pipelines"
+    headers = {"Authorization": f"Bearer {GITLAB_TOKEN}"}
+
+    r = requests.get(url, headers=headers, params={"ref": ref})
+    return r.json()[0]
+
+
+def sync_labs_from_schemes():
+    """
+    Sinkronkan tabel 'labs' dengan semua file JSON di SCHEME_PATH.
+    lab_id = nama file tanpa ekstensi .json
+    """
+    scheme_files = glob.glob(os.path.join(SCHEME_PATH, "*.json"))
+
+    # Ambil lab_id yang sudah ada di DB
+    existing = {lab.lab_id for lab in db_session.query(Lab.lab_id).all()}
+
+    for path in scheme_files:
+        filename = os.path.basename(path)
+        lab_id, ext = os.path.splitext(filename)
+        if ext != ".json":
+            continue
+        if lab_id not in existing:
+            db_session.add(Lab(lab_id=lab_id, scheme_path=path))
+            existing.add(lab_id)
+
+    db_session.commit()
+
+def run_cleanup_actions(lab_id):
+    scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
+    if not os.path.exists(scheme_file):
+        return
+
+    with open(scheme_file, "r") as f:
+        scheme = json.load(f)
+
+    for criterion in scheme.get("criteria", []):
+        ctype = criterion.get("type")
+        key = criterion.get("key")
+        cleanup = criterion.get("cleanup")
+
+        if not cleanup:
+            continue
+
+        try:
+            if ctype == "user":
+                username = key
+                subprocess.run(["userdel", "-r", username], check=False)
+        except Exception as e:
+            print(f"Cleanup error for {lab_id} {ctype} {key}: {e}")
+
 
 @app.before_request
 def validate_content_type():
@@ -164,6 +220,7 @@ wib = pytz.timezone("Asia/Jakarta")
 @app.route('/grade-lab', methods=['POST'])
 def grade_lab():
     try:
+        # Ambil token dan body
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         data = request.get_json()
         print("FULL DATA POSTED:", data)
@@ -181,17 +238,24 @@ def grade_lab():
         if not lab_id or not class_name:
             return jsonify({"error": "lab_id and class_name are required"}), 400
 
+        # Ambil username dari token
         username = token.split("-")[2]
-
         print(f"Username: {username}, Class Name: {class_name}")
 
         if not isinstance(client_data, dict):
             return jsonify({"error": "Invalid client data format"}), 400
 
-        active_lab = ACTIVE_LABS.get(token)
-        if not active_lab or active_lab["lab_id"] != lab_id:
-            return jsonify({"error": "Lab not started or invalid lab"}), 403
+        # Validasi / inisialisasi lab aktif
+        active_lab_map = ACTIVE_LABS.setdefault(token, {})
+        # Kalau belum ada / beda lab_id, inisialisasi baru
+        if not lab_id or active_lab_map:
+            active_lab_map[lab_id] = {
+#                "lab_id": lab_id,
+                "start_time": datetime.now(wib)
+            }
+            active_lab = active_lab_map[lab_id]
 
+        # Baca scheme
         scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
         if not os.path.exists(scheme_file):
             return jsonify({"error": "Lab not found"}), 404
@@ -200,9 +264,10 @@ def grade_lab():
             scheme = json.load(f)
 
         total_score = 0
-        feedback = []
+        feedback_failed = []
+        feedback_success = []
 
-        # ========== UPDATE: Cek kelulusan case dengan fail detection, ========== #
+        # ========= LOGIKA PENILAIAN PER KRITERIA =========
         for criterion in scheme.get("criteria", []):
             ctype = criterion.get("type")
             key = criterion.get("key")
@@ -213,11 +278,10 @@ def grade_lab():
             actual_value = client_data.get(key, None)
 
             failed = False
-            # Jika tidak isi/jawaban kosong
             if actual_value is None or actual_value == "":
                 failed = True
             elif ctype == "command":
-                if not (expected and actual_value and expected.lower() in str(actual_value).lower()):
+                if str(actual_value) != str(expected):
                     failed = True
             elif ctype == "file_exists":
                 if expected != str(actual_value):
@@ -244,23 +308,32 @@ def grade_lab():
             elif ctype == "group":
                 if expected != str(actual_value):
                     failed = True
-            # (tambah lain jika perlu)
-            # ----- end logika fail -----
+            elif ctype == "gitlab_pipeline":
+                if expected != str(actual_value):
+                    failed = True
 
             if not failed:
                 total_score += score
+                feedback_success.append(description)
             else:
-                feedback.append(f"{description}: Failed")
+                feedback_failed.append(f"{description}: Failed")
                 with open(lab_log_path, 'a') as logfile:
                     logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
 
-        # Setelah semua criterion, cek apakah ada yang failed
-        if any("Failed" in f for f in feedback):
-            total_score = 0
+        # Kalau ada minimal 1 failed, nilai 0
+        #if any("Failed" in f for f in feedback_failed):
+        #    total_score = 0
 
+        # Gabungkan: gagal dulu, lalu yang sukses
+        all_feedback = feedback_failed + feedback_success
+
+        print("DEBUG feedback_failed:", feedback_failed)
+        print("DEBUG feedback_success:", feedback_success)
+        print("DEBUG all_feedback:", all_feedback)
         print(f"Total score calculated: {total_score}")
 
         try:
+            # Hitung durasi
             start_time = active_lab.get("start_time")
             end_time = datetime.now(wib)
             duration = (end_time - start_time).total_seconds() if start_time else None
@@ -272,7 +345,6 @@ def grade_lab():
             penalty_messages = []
             score_awal = total_score
 
-            # Penalty hanya kalau score > 0 (artinya semua lulus)
             if total_score > 0 and duration is not None and duration > max_duration:
                 n_penalty = int((duration - max_duration) // max_duration) + 1
                 penalty_total = n_penalty * penalty_percent
@@ -284,7 +356,7 @@ def grade_lab():
                     f"Waktu pengerjaan melebihi 3 menit, pengurangan {penalty_percent}% per 3 menit. Nilai akhir: {new_score:.2f}"
                 )
 
-            # Ambil info user dari database
+            # Ambil info user dan grup
             user_info = db_session.query(User).filter_by(username=username).first()
             if not user_info:
                 return jsonify({"error": "User not found"}), 404
@@ -292,17 +364,16 @@ def grade_lab():
             group_name = user_info.group_name
             class_name = user_info.class_name
 
-            # Ambil semua anggota grup yang sama
             group_users = db_session.query(User).filter_by(class_name=class_name, group_name=group_name).all()
 
-            # Loop semua anggota, insert grading result
+            # Simpan hasil ke semua anggota grup
             for group_user in group_users:
                 grading_result = GradingResult(
                     username=group_user.username,
                     class_name=class_name,
                     lab_id=lab_id,
                     score=total_score,
-                    feedback=", ".join(feedback),
+                    feedback=", ".join(all_feedback),
                     duration=duration,
                     status="done",
                     timestamp=datetime.now(wib)
@@ -319,7 +390,7 @@ def grade_lab():
 
         return jsonify({
             "score": total_score if total_score is not None else 0,
-            "feedback": feedback if isinstance(feedback, list) else [],
+            "feedback": all_feedback if isinstance(all_feedback, list) else [],
             "log_path": lab_log_path,
             "duration": duration if duration is not None else 0,
             "penalty": penalty_messages
@@ -335,7 +406,6 @@ def grade_lab():
 @app.route('/finish-lab', methods=['POST'])
 def finish_lab():
     try:
-        # Ambil token dari header Authorization
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             return jsonify({"error": "Invalid or missing Authorization header"}), 401
@@ -344,26 +414,29 @@ def finish_lab():
         if not token:
             return jsonify({"error": "Token is missing"}), 401
 
-        # Ambil lab_id dari body request
         data = request.get_json()
         if not data or "lab_id" not in data:
             return jsonify({"error": "Invalid request data"}), 400
 
         lab_id = data.get("lab_id")
 
-        # Hapus lab yang aktif untuk token ini
-        if token in ACTIVE_LABS and ACTIVE_LABS[token]["lab_id"] == lab_id:
+        # kalau masih tercatat aktif, hapus dari ACTIVE_LABS
+        active_lab = ACTIVE_LABS.get(token)
+        if active_lab and active_lab.get("lab_id") == lab_id:
             del ACTIVE_LABS[token]
-            # Tambahan: hapus file log saat lab selesai
-            lab_log_path = f"/var/log/gradingctl/labs/{lab_id}.log"
-            if os.path.exists(lab_log_path):
-                os.remove(lab_log_path)
-            return jsonify({"message": f"Lab '{lab_id}' finished successfully"}), 200
-        else:
-            return jsonify({"error": "Lab not found or not active"}), 404
+
+        # jalankan cleanup sesuai skema
+        run_cleanup_actions(lab_id)
+
+        # hapus log kalau ada
+        lab_log_path = f"/var/log/gradingctl/labs/{lab_id}.log"
+        if os.path.exists(lab_log_path):
+            os.remove(lab_log_path)
+
+        return jsonify({"message": f"Lab '{lab_id}' finished successfully"}), 200
 
     except Exception as e:
-        print(f"Error in finish_lab: {str(e)}")  # Debugging
+        print(f"Error in finish_lab: {str(e)}")
         return jsonify({"error": "Server error", "details": str(e)}), 500
 
 @app.route('/add-lab', methods=['POST'])
@@ -572,23 +645,31 @@ def show_results():
 @app.route('/download-results', methods=['GET'])
 def download_results():
     try:
-        class_name = request.args.get("class_name", "").strip()  # Ambil class_name, default ke string kosong
-        lab_id = request.args.get("lab_id", "").strip()  # Ambil lab_id, default ke string kosong
+        class_name = request.args.get("class_name", "").strip()
+        lab_id = request.args.get("lab_id", "").strip()
+        search_name = request.args.get("search_name", "").strip()  # TAMBAH INI
 
         query = db_session.query(GradingResult)
 
-        # Terapkan filter hanya jika class_name atau lab_id tidak kosong
+        # Filter berdasarkan class_name
         if class_name:
             query = query.filter(GradingResult.class_name == class_name)
+
+        # Filter berdasarkan lab_id
         if lab_id:
             query = query.filter(GradingResult.lab_id == lab_id)
+
+        # TAMBAH: Filter berdasarkan user name (search_name)
+        if search_name:
+            # Join dengan User table untuk filter berdasarkan nama
+            query = query.join(User, GradingResult.username == User.username)
+            query = query.filter(User.name == search_name)
 
         results = query.order_by(
             GradingResult.username.asc(),
             GradingResult.lab_id.asc(),
             GradingResult.score.desc()).all()
 
-        # Debugging: Cetak jumlah hasil query
         print(f"Number of results fetched: {len(results)}")
 
         users = db_session.query(User).all()
@@ -596,7 +677,6 @@ def download_results():
         best_results = {}
         for result in results:
             key = (result.username, result.class_name, result.lab_id)
-            # Ambil score tertinggi saja
             if key not in best_results or result.score > best_results[key].score:
                 best_results[key] = result
 
@@ -621,7 +701,7 @@ def download_results():
                 result.score,
                 result.feedback,
                 result.timestamp.strftime('%Y-%m-%d %H:%M:%S')
-        ])
+            ])
 
         # Siapkan respons untuk mengunduh file CSV
         output.seek(0)
@@ -632,7 +712,7 @@ def download_results():
         return response
 
     except Exception as e:
-        print(f"Error generating CSV: {str(e)}")  # Debugging
+        print(f"Error generating CSV: {str(e)}")
         return jsonify({"error": "Failed to generate CSV", "details": str(e)}), 500
 
 @app.route('/get-filters', methods=['GET'])
@@ -906,18 +986,29 @@ def list_schemes():
 
 @app.route('/')
 def home():
+    order_by = request.args.get('order_by', 'name_asc')
+
     schemes = []
     for filename in os.listdir(SCHEME_PATH):
         if filename.endswith(".json"):
             scheme_file = os.path.join(SCHEME_PATH, filename)
             with open(scheme_file, 'r') as f:
                 scheme = json.load(f)
-                schemes.append(scheme)
-    return render_template('index.html', schemes=schemes)
+
+            # kalau lab_id nggak ada di file, ambil dari nama file
+            scheme.setdefault('lab_id', filename.replace('.json', ''))
+            schemes.append(scheme)
+
+    if order_by == 'name_asc':
+        schemes.sort(key=lambda s: s.get('lab_id', '').lower())
+    elif order_by == 'name_desc':
+        schemes.sort(key=lambda s: s.get('lab_id', '').lower(), reverse=True)
+
+    return render_template('index.html', schemes=schemes, order_by=order_by)
 
 @app.route('/add_scheme')
 def add_scheme():
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline"]
     expected = {
         "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
@@ -927,7 +1018,8 @@ def add_scheme():
         "config_check": ["correct"],
         "package": ["installed"],
         "user": ["exists", "deleted"],
-        "group": ["exists", "deleted"]
+        "group": ["exists", "deleted"],
+        "gitlab_pipeline": ["success"]
     }
 
     return render_template('add_scheme.html', types=types, expected=expected)
@@ -944,6 +1036,33 @@ def get_log():
         return jsonify({"content": content}), 200
     except Exception as e:
         return jsonify({"error": f"Log not found: {str(e)}"}), 404
+
+@app.route("/webhook/gitlab", methods=["POST"])
+def gitlab_webhook():
+    # 1. Validasi secret token
+    if request.headers.get("X-Gitlab-Token") != GITLAB_SECRET:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.json
+
+    # 2. Ambil data penting
+    project_id = data["project"]["id"]
+    pipeline = data["object_attributes"]
+
+    pipeline_id = pipeline["id"]
+    status = pipeline["status"]
+    ref = pipeline["ref"]
+    sha = pipeline["sha"]
+
+    # 3. Simpan status (cache / DB)
+    ACTIVE_PIPELINES[(project_id, ref)] = {
+        "pipeline_id": pipeline_id,
+        "status": status,
+        "sha": sha
+    }
+
+    return jsonify({"message": "Pipeline recorded"}), 200
+
 
 if __name__ == "__main__":
     init_db()

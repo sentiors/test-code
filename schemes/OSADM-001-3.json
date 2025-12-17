@@ -1,0 +1,37 @@
+{
+    "lab_id": "OSADM-001-3",
+    "criteria": [
+        {
+            "type": "command",
+            "key": "image_name_ok",
+            "expected": "true",
+            "description": "Cek nama image Horizon sesuai format",
+            "score": 25,
+            "cleanup": false
+        },
+        {
+            "type": "command",
+            "key": "flavor_name_ok",
+            "expected": "true",
+            "description": "Cek nama flavor Horizon sesuai format",
+            "score": 25,
+            "cleanup": false
+        },
+        {
+            "type": "command",
+            "key": "flavor_spec_ok",
+            "expected": "true",
+            "description": "Cek spesifikasi flavor Horizon (1 vCPU, 1GB RAM, 4GB disk)",
+            "score": 25,
+            "cleanup": false
+        },
+        {
+            "type": "command",
+            "key": "keypair_name_ok",
+            "expected": "true",
+            "description": "Cek nama keypair Horizon sesuai formatt",
+            "score": 25,
+            "cleanup": false
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "lab_id": "abcd123",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "sidarmawan",
+            "expected": "exists",
+            "description": "cek sidarmawan",
+            "score": 100.0,
+            "cleanup": true
+        }
+    ]
+}

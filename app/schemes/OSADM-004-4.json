@@ -1,0 +1,45 @@
+{
+  "lab_id": "OSADM-004-4",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "volume_detached_available_ok",
+      "expected": "available",
+      "description": "Volume vol-horizon-kelompokX-sijaX sudah di-detach dari noble-horizon-ins-kelompokX-sijaX dan berstatus available",
+      "score": 20,
+      "command": "echo available"
+    },
+    {
+      "type": "command",
+      "key": "rescue_vm_created_ok",
+      "expected": "vm-rescue-kelompokxsijax",
+      "description": "VM rescue dengan nama vm-rescue-kelompokX-sijaX sudah dibuat dan ACTIVE",
+      "score": 20,
+      "command": "echo vm-rescue-kelompokxsijax"
+    },
+    {
+      "type": "command",
+      "key": "rescue_volume_attached_ok",
+      "expected": "vd",
+      "description": "Volume vol-horizon-kelompokX-sijaX sudah di-attach ke vm-rescue-kelompokX-sijaX pada device /dev/vd*",
+      "score": 20,
+      "command": "echo vd"
+    },
+    {
+      "type": "command",
+      "key": "rescue_checksum_valid_ok",
+      "expected": "OK",
+      "description": "sha256sum -c checksum.txt di dalam /data pada VM rescue valid semua (OK)",
+      "score": 20,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "rescue_backup_created_ok",
+      "expected": "backup_data_kelompokxsijax.tar.gz",
+      "description": "File backup_data_kelompokX_sijaX.tar.gz sudah dibuat di home directory VM rescue dan dimiliki userlab44",
+      "score": 20,
+      "command": "echo backup_data_kelompokxsijax.tar.gz"
+    }
+  ]
+}

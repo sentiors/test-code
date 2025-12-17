@@ -1,0 +1,37 @@
+{
+  "lab_id": "OSADM-001-2",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "image_name_ok",
+      "expected": "OK",
+      "description": "Cek nama image sesuai format",
+      "score": 25,
+      "command": "openstack image list -f value -c Name"
+    },
+    {
+      "type": "command",
+      "key": "flavor_name_ok",
+      "expected": "OK",
+      "description": "Cek nama flavor sesuai format",
+      "score": 25,
+      "command": "openstack flavor list -f value -c Name"
+    },
+    {
+      "type": "command",
+      "key": "flavor_spec_ok",
+      "expected": "OK",
+      "description": "Cek spesifikasi flavor (1 vCPU, 512MB RAM, 4GB disk)",
+      "score": 25,
+      "command": "openstack flavor show fl-lab001-2-PLACEHOLDER -f json"
+    },
+    {
+      "type": "command",
+      "key": "keypair_name_ok",
+      "expected": "OK",
+      "description": "Cek nama keypair sesuai format",
+      "score": 25,
+      "command": "openstack keypair list -f value -c Name"
+    }
+  ]
+}

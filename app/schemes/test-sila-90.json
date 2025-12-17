@@ -1,0 +1,21 @@
+{
+    "lab_id": "test-sila-90",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "kuromi",
+            "expected": "exists",
+            "description": "harus ada",
+            "score": 50.0,
+            "cleanup": true
+        },
+        {
+            "type": "user",
+            "key": "melody",
+            "expected": "exists",
+            "description": "harus ada",
+            "score": 50.0,
+            "cleanup": true
+        }
+    ]
+}

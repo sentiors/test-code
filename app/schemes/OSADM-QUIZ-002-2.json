@@ -1,0 +1,45 @@
+{
+  "lab_id": "OSADM-QUIZ-002-2",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "intnet_deleted",
+      "expected": "OK",
+      "description": "Internal network intnet-quiz002-1-kelompokX-sijaX sudah dihapus",
+      "score": 20,
+      "command": "openstack network list -f value -c Name"
+    },
+    {
+      "type": "command",
+      "key": "intsubnet_deleted",
+      "expected": "OK",
+      "description": "Subnet intsubnet-quiz002-1-kelompokX-sijaX sudah dihapus",
+      "score": 20,
+      "command": "openstack subnet list -f value -c Name"
+    },
+    {
+      "type": "command",
+      "key": "router_iface_unset",
+      "expected": "OK",
+      "description": "Router ro-horizon-kelompokX-sijaX sudah unset interface ke quiz subnet",
+      "score": 20,
+      "command": "openstack router show ro-horizon-kelompokX-sijaX -f json"
+    },
+    {
+      "type": "command",
+      "key": "floating_ip_deleted",
+      "expected": "OK",
+      "description": "Floating IP dari QUIZ 002-1 sudah dihapus",
+      "score": 20,
+      "command": "openstack floating ip list -f json"
+    },
+    {
+      "type": "command",
+      "key": "secgroup_deleted",
+      "expected": "OK",
+      "description": "Security group scg-quiz002-1-kelompokX-sijaX sudah dihapus",
+      "score": 20,
+      "command": "openstack security group list -f value -c Name"
+    }
+  ]
+}

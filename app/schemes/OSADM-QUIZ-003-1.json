@@ -1,0 +1,53 @@
+{
+  "lab_id": "OSADM-QUIZ-003-1",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "quiz3_server_ok",
+      "expected": "OK",
+      "description": "Instance 2048-quiz003-1-kelompokX-sijaX sudah dibuat dengan image, flavor, keypair, security group, dan network yang benar",
+      "score": 30,
+      "command": "openstack server show 2048-quiz003-1-PLACEHOLDER -f json"
+    },
+    {
+      "type": "command",
+      "key": "quiz3_net_ok",
+      "expected": "OK",
+      "description": "Network dan subnet quiz003-1 punya CIDR, gateway, allocation pool, dan DNS yang sesuai",
+      "score": 20,
+      "command": "openstack subnet show subnet-quiz003-1-PLACEHOLDER -f json"
+    },
+    {
+      "type": "command",
+      "key": "quiz3_port_ok",
+      "expected": "OK",
+      "description": "Port quiz003-1 sudah dibuat dan fixed IP 172.19.X.47 terasosiasi ke instance",
+      "score": 15,
+      "command": "openstack port show port-quiz003-1-PLACEHOLDER -f json"
+    },
+    {
+      "type": "command",
+      "key": "quiz3_sg_ok",
+      "expected": "OK",
+      "description": "Security group sg-quiz003-1-kelompokX-sijaX memiliki rule ICMP, SSH(22), dan HTTP(80) ingress",
+      "score": 15,
+      "command": "openstack security group rule list sg-quiz003-1-PLACEHOLDER -f json"
+    },
+    {
+      "type": "command",
+      "key": "quiz3_fip_ok",
+      "expected": "OK",
+      "description": "Instance sudah terasosiasi dengan Floating IP (IP ketiga dari range FL-IP kelompok)",
+      "score": 10,
+      "command": "openstack server show 2048-quiz003-1-PLACEHOLDER -f json"
+    },
+    {
+      "type": "command",
+      "key": "quiz3_nginx_2048_ok",
+      "expected": "OK",
+      "description": "Game 2048 dapat diakses melalui Floating IP (nginx serve dari /var/www/kelompokXsijaX)",
+      "score": 10,
+      "command": "curl -I http://FIP_PLACEHOLDER/"
+    }
+  ]
+}

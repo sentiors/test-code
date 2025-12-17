@@ -1,0 +1,29 @@
+{
+  "lab_id": "OSADM-004-2",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "vol_created_attached_ok",
+      "expected": "OK",
+      "description": "Volume 3GB dengan nama volume-kelompokX-sijaX sudah dibuat dan ter-attach ke cirros-cli-kelompokX-sijaX pada /dev/vdb",
+      "score": 40,
+      "command": "openstack volume show volume-PLACEHOLDER-sijax -f json"
+    },
+    {
+      "type": "command",
+      "key": "fs_mounted_ok",
+      "expected": "OK",
+      "description": "Volume /dev/vdb sudah diformat ext4 dan di-mount ke /data di dalam instance",
+      "score": 30,
+      "command": "ssh -o StrictHostKeyChecking=no cirros@FIP_PLACEHOLDER sudo lsblk -f"
+    },
+    {
+      "type": "command",
+      "key": "data_and_checksum_ok",
+      "expected": "OK",
+      "description": "File words.txt, debian-index.gz, readme, dan checksum.txt sudah ada di /data dan checksum.txt berisi hash untuk semua file",
+      "score": 30,
+      "command": "ssh -o StrictHostKeyChecking=no cirros@FIP_PLACEHOLDER sudo ls -1 /data && ssh -o StrictHostKeyChecking=no cirros@FIP_PLACEHOLDER sudo cat /data/checksum.txt"
+    }
+  ]
+}

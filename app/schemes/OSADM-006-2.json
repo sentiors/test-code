@@ -1,0 +1,29 @@
+{
+  "lab_id": "OSADM-006-2",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "stack_name_ok",
+      "description": "Stack autoscaling sudah ada dan COMPLETE",
+      "score": 30,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "stack_events_scale_ok",
+      "description": "Event stack punya 2x scale out dan 2x scale in SIGNAL_COMPLETE",
+      "score": 40,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "autoscaling_config_ok",
+      "description": "min/max/desired + threshold CPU high/low sesuai di autoscaling.yaml",
+      "score": 30,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    }
+  ]
+}

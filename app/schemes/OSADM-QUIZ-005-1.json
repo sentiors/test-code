@@ -1,0 +1,29 @@
+{
+  "lab_id": "OSADM-QUIZ-005-1",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "ssh_timeout_45m_ok",
+      "expected": "OK",
+      "description": "Timeout SSH client dan server diatur 45 menit",
+      "score": 30,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "lb_behaviour_ok",
+      "expected": "OK",
+      "description": "Konfigurasi sticky SSH 45 menit dan healthcheck aktif untuk backend",
+      "score": 30,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "http_weight_2_to_1_ok",
+      "expected": "OK",
+      "description": "Backend1 pada HTTP load balancer menerima bobot 2 kali backend2 (weight 2:1)",
+      "score": 40,
+      "command": "echo OK"
+    }
+  ]
+}

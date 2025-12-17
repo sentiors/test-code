@@ -3,163 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <title>Edit Scheme</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
-            background-color: #f5f6fa;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            text-align: center;
         }
         .container {
             max-width: 900px;
-            margin-top: 60px;
+            margin: 50px auto;
             background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            padding: 30px 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: left;
         }
         h2 {
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 30px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 25px;
             text-align: center;
         }
         .criterion-row {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             gap: 10px;
             margin-bottom: 10px;
         }
+        .criterion-row select,
+        .criterion-row input {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .criterion-row select[name="type"],
+        .criterion-row select[name="expected"] {
+            min-width: 140px;
+        }
+        .criterion-row input[name="key"],
+        .criterion-row input[name="description"],
+        .criterion-row input[name="score"] {
+            flex: 1 1 150px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            transition: background 0.3s;
+        }
         .btn-remove {
             background-color: #dc3545;
-            color: white;
         }
         .btn-remove:hover {
             background-color: #c82333;
         }
         .btn-add {
             background-color: #007bff;
-            color: white;
         }
         .btn-add:hover {
-            background-color: #0069d9;
+            background-color: #0056b3;
         }
         .btn-save {
             background-color: #28a745;
-            color: white;
         }
         .btn-save:hover {
             background-color: #218838;
+        }
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .top-link {
+            margin-bottom: 15px;
+        }
+        .top-link a {
+            font-size: 14px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .top-link a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="top-link">
+            <a href="/">← Back to Scheme List</a>
+        </div>
         <h2>Edit Scheme: {{ scheme.lab_id }}</h2>
+
         <form id="editForm">
             <div id="criteria-container">
                 {% for criterion in scheme.criteria %}
                 <div class="criterion-row">
-                    <select name="type" class="form-select w-auto" required onchange="updateExpected(this)">
+                    <input type="checkbox" name="cleanup" class="cleanup-checkbox"
+                           {% if criterion.cleanup %}checked{% endif %}>
+                    <label>clear</label>
+                    <select name="type" required onchange="updateExpected(this)">
                         {% for type in types %}
                             <option value="{{ type }}" {% if type == criterion.type %}selected{% endif %}>{{ type }}</option>
                         {% endfor %}
                     </select>
-                    <input type="text" name="key" class="form-control" value="{{ criterion.key }}" required>
-                    <select name="expected" class="form-select w-auto" required>
+                    <input type="text" name="key" value="{{ criterion.key }}" placeholder="Specify the criteria" required>
+                    <select name="expected" required>
                         {% for exp in expected[criterion.type] %}
                             <option value="{{ exp }}" {% if exp == criterion.expected %}selected{% endif %}>{{ exp }}</option>
                         {% endfor %}
                     </select>
-                    <input type="text" name="description" class="form-control" value="{{ criterion.description }}" required>
-                    <input type="number" name="score" class="form-control" value="{{ criterion.score }}" required>
+                    <input type="text" name="description" value="{{ criterion.description }}" placeholder="Description" required>
+                    <input type="number" name="score" value="{{ criterion.score }}" placeholder="Score" required>
                     <button type="button" class="btn btn-remove" onclick="removeRow(this)">Remove</button>
                 </div>
                 {% endfor %}
             </div>
-            <div class="mt-3">
+
+            <div class="actions">
                 <button type="button" class="btn btn-add" onclick="addCriterion()">Add Criterion</button>
                 <button type="submit" class="btn btn-save">Save</button>
             </div>
         </form>
     </div>
-<script>
-    // Inject expected options per type (from Jinja)
-    const expectedOptions = {
-        {% for type in types %}
-            "{{ type }}": {{ expected[type] | tojson }},
-        {% endfor %}
-    };
 
-    function addCriterion() {
-        const container = document.getElementById('criteria-container');
-        const types = `{% for type in types %}<option value="{{ type }}">{{ type }}</option>{% endfor %}`;
-        const expectedInitial = `{% for exp in expected[types[0]] %}<option value="{{ exp }}">{{ exp }}</option>{% endfor %}`;
-        const row = document.createElement('div');
-        row.classList.add('criterion-row');
-        row.innerHTML = `
-            <select name="type" class="form-select w-auto" required onchange="updateExpected(this)">
-                ${types}
-            </select>
-            <input type="text" name="key" class="form-control" required>
-            <select name="expected" class="form-select w-auto" required>
-                ${expectedInitial}
-            </select>
-            <input type="text" name="description" class="form-control" required>
-            <input type="number" name="score" class="form-control" required>
-            <button type="button" class="btn btn-remove" onclick="removeRow(this)">Remove</button>
-        `;
-        container.appendChild(row);
-    }
-
-    function updateExpected(select) {
-        const selectedType = select.value;
-        const expectedSelect = select.parentElement.querySelector('select[name="expected"]');
-        expectedSelect.innerHTML = '';
-        if (expectedOptions[selectedType]) {
-            expectedOptions[selectedType].forEach(function(exp) {
-                const opt = document.createElement('option');
-                opt.value = exp;
-                opt.textContent = exp;
-                expectedSelect.appendChild(opt);
-            });
-        }
-    }
-
-    function removeRow(button) {
-        button.parentElement.remove();
-    }
-
-    document.getElementById('editForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const criteria = [];
-        document.querySelectorAll('#criteria-container .criterion-row').forEach(criterion => {
-            const inputs = criterion.querySelectorAll('input, select');
-            criteria.push({
-                type: inputs[0].value,
-                key: inputs[1].value,
-                expected: inputs[2].value,
-                description: inputs[3].value,
-                score: parseInt(inputs[4].value)
-            });
-        });
-
-        const data = {
-            lab_id: "{{ scheme.lab_id }}",
-            criteria: criteria
+    <script>
+        // Inject expected options per type (from Jinja)
+        const expectedOptions = {
+            {% for type in types %}
+                "{{ type }}": {{ expected[type] | tojson }},
+            {% endfor %}
         };
 
-        fetch('/edit_scheme/{{ scheme.lab_id }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        }).then(response => response.json())
-          .then(data => {
-              alert(data.message || data.error);
-              // Redirect ke halaman scheme editor
-              window.location.href = "/"; // atau "/scheme_editor", sesuai route index daftar scheme
-          }).catch(err => {
-              alert("Error menyimpan data!");
-          });
-    });
-</script>
+        function addCriterion() {
+            const container = document.getElementById('criteria-container');
+            const typesOptions = `{% for type in types %}<option value="{{ type }}">{{ type }}</option>{% endfor %}`;
+            const expectedInitial = `{% for exp in expected[types[0]] %}<option value="{{ exp }}">{{ exp }}</option>{% endfor %}`;
+            const row = document.createElement('div');
+            row.classList.add('criterion-row');
+            row.innerHTML = `
+                <input type="checkbox" name="cleanup" class="cleanup-checkbox">
+                <label>clear</label>
+                <select name="type" required onchange="updateExpected(this)">
+                    ${typesOptions}
+                </select>
+                <input type="text" name="key" placeholder="Specify the criteria" required>
+                <select name="expected" required>
+                    ${expectedInitial}
+                </select>
+                <input type="text" name="description" placeholder="Description" required>
+                <input type="number" name="score" placeholder="Score" required>
+                <button type="button" class="btn btn-remove" onclick="removeRow(this)">Remove</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function updateExpected(select) {
+            const selectedType = select.value;
+            const expectedSelect = select.parentElement.querySelector('select[name="expected"]');
+            expectedSelect.innerHTML = '';
+            if (expectedOptions[selectedType]) {
+                expectedOptions[selectedType].forEach(function(exp) {
+                    const opt = document.createElement('option');
+                    opt.value = exp;
+                    opt.textContent = exp;
+                    expectedSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function removeRow(button) {
+            button.parentElement.remove();
+        }
+
+        document.getElementById('editForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const criteria = [];
+            document.querySelectorAll('#criteria-container .criterion-row').forEach(criterion => {
+                const cleanupChecked = criterion.querySelector('input[name="cleanup"]').checked;
+                const type = criterion.querySelector('select[name="type"]').value;
+                const key = criterion.querySelector('input[name="key"]').value;
+                const expectedVal = criterion.querySelector('select[name="expected"]').value;
+                const desc = criterion.querySelector('input[name="description"]').value;
+                const scoreVal = parseInt(criterion.querySelector('input[name="score"]').value);
+
+                criteria.push({
+                    type: type,
+                    key: key,
+                    expected: expectedVal,
+                    description: desc,
+                    score: scoreVal,
+                    cleanup: cleanupChecked
+                });
+            });
+
+            const data = {
+                lab_id: "{{ scheme.lab_id }}",
+                criteria: criteria
+            };
+
+            fetch('/edit_scheme/{{ scheme.lab_id }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(response => response.json())
+              .then(data => {
+                  alert(data.message || data.error);
+                  window.location.href = '/';
+              }).catch(err => {
+                  alert("Error menyimpan data!");
+              });
+        });
+    </script>
+</body>
+</html>

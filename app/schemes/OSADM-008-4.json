@@ -1,0 +1,21 @@
+{
+  "lab_id": "OSADM-008-4",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "merge_log_ok",
+      "description": "History main di node1 berisi commit merge dan resolve conflict sesuai lab 8.4",
+      "score": 50,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    },
+    {
+      "type": "command",
+      "key": "remote_files_ok",
+      "description": "Clone verify-dir-0084 berisi README.md dan file1.txt, file2.txt, file3.txt dengan isi README sesuai patokan",
+      "score": 50,
+      "expected": "OK",
+      "command": "echo PLACEHOLDER"
+    }
+  ]
+}

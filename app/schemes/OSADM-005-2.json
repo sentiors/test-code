@@ -1,0 +1,37 @@
+{
+  "lab_id": "OSADM-005-2",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "backends_ready_ok",
+      "expected": "OK",
+      "description": "Kedua VM backend sudah menjalankan Apache dan menampilkan halaman masing-masing",
+      "score": 25,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "haproxy_installed_ok",
+      "expected": "OK",
+      "description": "Paket HAProxy sudah terinstall di VM haproxy-kelompokX-sijaX",
+      "score": 25,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "haproxy_config_ok",
+      "expected": "OK",
+      "description": "Konfigurasi HAProxy memiliki frontend http_front dan backend http_back dengan dua server backend",
+      "score": 25,
+      "command": "echo OK"
+    },
+    {
+      "type": "command",
+      "key": "haproxy_roundrobin_ok",
+      "expected": "OK",
+      "description": "Akses HTTP melalui Floating IP HAProxy melakukan load balancing ke kedua backend (roundrobin)",
+      "score": 25,
+      "command": "echo OK"
+    }
+  ]
+}
