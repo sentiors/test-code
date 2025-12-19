@@ -1,30 +1,21 @@
 {
-  "lab_id": "OSADM-009-2",
-  "description": "Create CI/CD pipeline with shell runner to build Docker image lab1shell-kelompokX-sijaX:latest",
-  "criteria": [
-    {
-      "type": "command",
-      "key": "repo_remote_ok",
-      "description": "Repository lokal shell-kelompokX-sijaX sudah di-init dan remote origin mengarah ke build-image-kelompokX-sijaX di GitLab",
-      "score": 30,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
-    },
-    {
-      "type": "command",
-      "key": "ci_files_ok",
-      "description": "File index.html, Dockerfile, dan .gitlab-ci.yml sesuai dengan spesifikasi lab 9.2",
-      "score": 40,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
-    },
-    {
-      "type": "command",
-      "key": "image_built_ok",
-      "description": "Pipeline berhasil membuild image lab1shell-kelompokX-sijaX:latest di node1 (docker image ls)",
-      "score": 30,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
-    }
-  ]
+    "lab_id": "OSADM-009-2",
+    "criteria": [
+        {
+            "type": "gitlab_pipeline",
+            "key": "kelompokx-sijax/build-image-kelompokx-sijax",
+            "expected": "success",
+            "description": "Pipeline build-image-kelompokx-sijax sukses",
+            "score": 50,
+            "cleanup": false
+        },
+        {
+            "type": "image",
+            "key": "lab1shell-kelompokx-sijax:latest",
+            "expected": "exists",
+            "description": "Cek image ada",
+            "score": 50,
+            "cleanup": false
+        }
+    ]
 }

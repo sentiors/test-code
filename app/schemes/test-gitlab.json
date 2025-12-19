@@ -1,0 +1,13 @@
+{
+    "lab_id": "test-gitlab",
+    "criteria": [
+        {
+            "type": "gitlab_project_exists",
+            "key": "kelompokx-sijax/game-kelompokx-sijax",
+            "expected": "exists",
+            "description": "cek project ada",
+            "score": 100,
+            "cleanup": false
+        }
+    ]
+}

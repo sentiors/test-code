@@ -1,14 +1,7 @@
 from flask import Flask, request, jsonify, render_template, make_response
 import os
 import json
-from .utils import (
-    check_gitlab_pipeline,
-    check_gitlab_project,
-    check_gitlab_runner,
-    get_gitlab_project_id,
-    check_gitlab_pipeline_two_success,
-    check_gitlab_pipeline_min_success
-)
+from .utils import check_gitlab_pipeline
 from .database import db_session, init_db
 from .models import User, Lab, GradingResult
 from datetime import datetime
@@ -254,14 +247,13 @@ def grade_lab():
 
         # Validasi / inisialisasi lab aktif
         active_lab_map = ACTIVE_LABS.setdefault(token, {})
-        active_lab = active_lab_map.get(lab_id)
         # Kalau belum ada / beda lab_id, inisialisasi baru
-        if active_lab is None:
-            active_lab = {
+        if not lab_id or active_lab_map:
+            active_lab_map[lab_id] = {
 #                "lab_id": lab_id,
                 "start_time": datetime.now(wib)
             }
-            active_lab_map[lab_id] = active_lab
+            active_lab = active_lab_map[lab_id]
 
         # Baca scheme
         scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
@@ -284,44 +276,10 @@ def grade_lab():
             score = criterion.get("score", 0)
 
             actual_value = client_data.get(key, None)
+
             failed = False
-
-            if ctype == "gitlab_project":
-                # key berisi path_with_namespace, contoh:
-                # kelompokx-sijax/build-image-kelompokx-sijax
-                ok, msg = check_gitlab_project(key)
-                if not ok:
-                    failed = True
-                    actual_value = msg  # biar kebaca di log
-            elif ctype == "gitlab_pipeline":
-                project_id, msg = get_gitlab_project_id(key)
-                if not project_id:
-                    failed = True
-                    actual_value = msg
-                else:
-                # Khusus QUIZ-010-1: harus 3 job (build, staging, production) sukses
-                    if lab_id == "OSADM-QUIZ-010-1":
-                        # Kamu bisa buat fungsi check_gitlab_pipeline_min_success(project_id, ref, 3) di utils.py
-                        ok, msg = check_gitlab_pipeline_min_success(
-                            project_id=project_id,
-                            ref=criterion.get("ref", "main"),
-                            min_count=3
-                        )
-                    # khusus OSADM-010-2: minimal 2 job (staging+production) sukses
-                    elif lab_id == "OSADM-010-2":
-                        ok, msg = check_gitlab_pipeline_two_success(
-                            project_id=project_id,
-                            ref=criterion.get("ref", "main"),
-                        )
-                    else:
-                        ok, msg = check_gitlab_pipeline(
-                            project_id=project_id,
-                            ref=criterion.get("ref", "main"),
-                        )
-                    actual_value = msg
-                    if not ok:
-                        failed = True
-
+            if actual_value is None or actual_value == "":
+                failed = True
             elif ctype == "command":
                 if str(actual_value) != str(expected):
                     failed = True
@@ -350,39 +308,18 @@ def grade_lab():
             elif ctype == "group":
                 if expected != str(actual_value):
                     failed = True
-            elif ctype == "gitlab_runner":
-                ok, msg = check_gitlab_runner(
-                    path_with_namespace=key,
-                    expected_name=expected,
-                    ref="main",
-                )
-                if not ok:
-                    failed = True
-                actual_value = msg
-            elif ctype == "image":
+            elif ctype == "gitlab_pipeline":
                 if expected != str(actual_value):
                     failed = True
-
+            elif ctype == "gitlab_project_exists":
 
             if not failed:
                 total_score += score
                 feedback_success.append(description)
             else:
                 feedback_failed.append(f"{description}: Failed")
-
-                #normalisasi pesan error
-                msg = str(actual_value)
-                if msg.startswith("Error: "):
-                    msg = msg[len("Error: "):]
-
-                print("DEBUG LOG WRITE:", lab_log_path, description, msg, flush=True)
-
-                now_str = datetime.now(wib).strftime("%Y-%m-%d %H:%M:%S")
-
                 with open(lab_log_path, 'a') as logfile:
-                    logfile.write(
-                        f"[{datetime.now(wib)}] CASE: {description} | ERROR: {msg}\n"
-                    )
+                    logfile.write(f"[{datetime.now(wib)}] CASE: {description} | ERROR: {actual_value}\n")
 
         # Kalau ada minimal 1 failed, nilai 0
         #if any("Failed" in f for f in feedback_failed):
@@ -835,7 +772,7 @@ def scheme_editor():
 
 @app.route('/create_scheme', methods=['GET', 'POST'])
 def create_scheme():
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group"]
     expected = {
         "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
@@ -845,11 +782,7 @@ def create_scheme():
         "config_check": ["correct"],
         "package": ["installed"],
         "user": ["exists", "deleted"],
-        "group": ["exists", "deleted"],
-        "gitlab_pipeline": ["success"],
-        "gitlab_project": ["exists"],
-        "gitlab_runner": ["exists"],
-        "image": ["exists"]
+        "group": ["exists", "deleted"]
     }
 
     if request.method == "GET":
@@ -957,7 +890,7 @@ def edit_scheme_page(lab_id):
     with open(scheme_file, "r") as f:
         scheme = json.load(f)
 
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group"]
 
     expected = {
         "command": ["true", "false"],
@@ -968,11 +901,7 @@ def edit_scheme_page(lab_id):
         "config_check": ["correct"],
         "package": ["installed"],
         "user": ["exists", "deleted"],
-        "group": ["exists", "deleted"],
-        "gitlab_pipeline": ["success"],
-        "gitlab_project": ["exists"],
-        "gitlab_runner": ["exists"],
-        "image": ["exists"]
+        "group": ["exists", "deleted"]
     }
 
     return render_template("edit_scheme.html", scheme=scheme, types=types, expected=expected)
@@ -1080,7 +1009,7 @@ def home():
 
 @app.route('/add_scheme')
 def add_scheme():
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project_exists"]
     expected = {
         "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
@@ -1092,9 +1021,7 @@ def add_scheme():
         "user": ["exists", "deleted"],
         "group": ["exists", "deleted"],
         "gitlab_pipeline": ["success"],
-        "gitlab_project": ["exists"],
-        "gitlab_runner": ["exists"],
-        "image": ["exists"]
+        "gitlab_project_exists": ["exists"]
     }
 
     return render_template('add_scheme.html', types=types, expected=expected)

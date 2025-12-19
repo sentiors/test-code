@@ -1,0 +1,30 @@
+{
+  "lab_id": "OSADM-010-2",
+  "criteria": [
+    {
+      "type": "gitlab_pipeline",
+      "key": "kelompokx-sijax/prod-ci-kelompokxsijax",
+      "expected": "exists",
+      "description": "Dua job (staging & production) sukses di pipeline terbaru",
+      "score": 50,
+      "cleanup": false
+    },
+    {
+      "type": "image",
+      "key": "prod-ci-kelompokx-sijax",
+      "expected": "exists",
+      "description": "Cek image prod-ci-kelompokx-sijax ada di node1",
+      "score": 25,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "osadm-010-2-curl-check",
+      "command": "curl-check",
+      "expected": "exists",
+      "description": "Cek konten web staging & production benar",
+      "score": 25,
+      "cleanup": false
+    }
+  ]
+}

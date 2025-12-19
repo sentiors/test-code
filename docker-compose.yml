@@ -2,9 +2,9 @@ version: "3.8"
 
 services:
   web:
-    build: .
-    image: grading-web:local
+    image: silaa/grading-web2:latest
     container_name: grading-web
+#    network_mode: "host"
     ports:
       - "8001:8000"        # host:container
     volumes:
@@ -13,6 +13,7 @@ services:
       - /opt/grading/app:/opt/grading/app
       - /opt/grading/app/schemes:/opt/grading/app/schemes
       - /opt/grading/app/api.py:/opt/grading/app/api.py:ro
+      - /var/log/gradingctl:/var/log/gradingctl
     restart: unless-stopped
     env_file:
       - .env

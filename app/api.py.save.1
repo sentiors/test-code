@@ -1,14 +1,7 @@
 from flask import Flask, request, jsonify, render_template, make_response
 import os
 import json
-from .utils import (
-    check_gitlab_pipeline,
-    check_gitlab_project,
-    check_gitlab_runner,
-    get_gitlab_project_id,
-    check_gitlab_pipeline_two_success,
-    check_gitlab_pipeline_min_success
-)
+from .utils import check_gitlab_pipeline, check_gitlab_project
 from .database import db_session, init_db
 from .models import User, Lab, GradingResult
 from datetime import datetime
@@ -293,35 +286,13 @@ def grade_lab():
                 if not ok:
                     failed = True
                     actual_value = msg  # biar kebaca di log
-            elif ctype == "gitlab_pipeline":
-                project_id, msg = get_gitlab_project_id(key)
-                if not project_id:
+            elif ctype == "gitlab_runner"
+                ok, msg = check_gitlab_runner(key, expected)
+                if not ok:
                     failed = True
                     actual_value = msg
-                else:
-                # Khusus QUIZ-010-1: harus 3 job (build, staging, production) sukses
-                    if lab_id == "OSADM-QUIZ-010-1":
-                        # Kamu bisa buat fungsi check_gitlab_pipeline_min_success(project_id, ref, 3) di utils.py
-                        ok, msg = check_gitlab_pipeline_min_success(
-                            project_id=project_id,
-                            ref=criterion.get("ref", "main"),
-                            min_count=3
-                        )
-                    # khusus OSADM-010-2: minimal 2 job (staging+production) sukses
-                    elif lab_id == "OSADM-010-2":
-                        ok, msg = check_gitlab_pipeline_two_success(
-                            project_id=project_id,
-                            ref=criterion.get("ref", "main"),
-                        )
-                    else:
-                        ok, msg = check_gitlab_pipeline(
-                            project_id=project_id,
-                            ref=criterion.get("ref", "main"),
-                        )
-                    actual_value = msg
-                    if not ok:
-                        failed = True
-
+            elif actual_value is None or actual_value == "":
+                failed = True
             elif ctype == "command":
                 if str(actual_value) != str(expected):
                     failed = True
@@ -350,19 +321,12 @@ def grade_lab():
             elif ctype == "group":
                 if expected != str(actual_value):
                     failed = True
-            elif ctype == "gitlab_runner":
-                ok, msg = check_gitlab_runner(
-                    path_with_namespace=key,
-                    expected_name=expected,
-                    ref="main",
-                )
-                if not ok:
+            elif ctype == "gitlab_pipeline":
+                if expected != str(actual_value):
                     failed = True
-                actual_value = msg
             elif ctype == "image":
                 if expected != str(actual_value):
                     failed = True
-
 
             if not failed:
                 total_score += score
@@ -835,7 +799,7 @@ def scheme_editor():
 
 @app.route('/create_scheme', methods=['GET', 'POST'])
 def create_scheme():
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "image"]
     expected = {
         "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
@@ -848,7 +812,6 @@ def create_scheme():
         "group": ["exists", "deleted"],
         "gitlab_pipeline": ["success"],
         "gitlab_project": ["exists"],
-        "gitlab_runner": ["exists"],
         "image": ["exists"]
     }
 
@@ -957,7 +920,7 @@ def edit_scheme_page(lab_id):
     with open(scheme_file, "r") as f:
         scheme = json.load(f)
 
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "image"]
 
     expected = {
         "command": ["true", "false"],
@@ -971,7 +934,6 @@ def edit_scheme_page(lab_id):
         "group": ["exists", "deleted"],
         "gitlab_pipeline": ["success"],
         "gitlab_project": ["exists"],
-        "gitlab_runner": ["exists"],
         "image": ["exists"]
     }
 

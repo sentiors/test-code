@@ -1,13 +1,13 @@
 {
-    "lab_id": "putra1",
+    "lab_id": "userni",
     "criteria": [
         {
             "type": "user",
-            "key": "putra111",
+            "key": "batreabc",
             "expected": "exists",
-            "description": "cek user putrs",
+            "description": "cek user ada",
             "score": 100.0,
-            "cleanup": false
+            "cleanup": true
         }
     ]
 }

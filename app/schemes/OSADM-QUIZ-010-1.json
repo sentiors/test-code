@@ -1,0 +1,29 @@
+{
+  "lab_id": "OSADM-QUIZ-010-1",
+  "criteria": [
+    {
+      "type": "gitlab_pipeline",
+      "key": "kelompokx-sijax/game-kelompokx-sijax",
+      "expected": "exists",
+      "description": "Pipeline (build, staging, production) sukses",
+      "score": 40,
+      "cleanup": false
+    },
+    {
+      "type": "image",
+      "key": "game-kelompokx-sijax",
+      "expected": "exists",
+      "description": "Cek image game-kelompokx-sijax ada di node1",
+      "score": 30,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "osadm-quiz-010-1-curl-check",
+      "expected": "exists",
+      "description": "Cek game Tetris bisa diakses di port 8083 (node1 & node2)",
+      "score": 30,
+      "cleanup": false
+    }
+  ]
+}

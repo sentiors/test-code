@@ -2,28 +2,21 @@
   "lab_id": "OSADM-QUIZ-009-1",
   "criteria": [
     {
-      "type": "command",
-      "key": "qr_repo_ok",
-      "description": "Repository lokal quiz-runner-kelompokX sudah dibuat dan remote origin mengarah ke quiz-runner-kelompokX di GitLab",
-      "score": 30,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "type": "gitlab_pipeline",
+      "key": "kelompokx-sijax/quiz-runner-kelompokx-sijax",
+      "expected": "success",
+      "job_name": "test-container",
+      "description": "Pipeline quiz-runner-kelompokx-sijax sukses",
+      "score": 50,
+      "cleanup": false
     },
     {
-      "type": "command",
-      "key": "qr_ci_files_ok",
-      "description": "File sesuai spesifikasi quiz 009-1",
-      "score": 40,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
-    },
-    {
-      "type": "command",
-      "key": "qr_container_ok",
-      "description": "Container quiz9-web-kelompokX berjalan",
-      "score": 30,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "type": "image",
+      "key": "quiz9-web-kelompokxsijax:latest",
+      "expected": "exists",
+      "description": "Cek image quiz9-web-kelompokxsijax ada",
+      "score": 50,
+      "cleanup": false
     }
   ]
 }
