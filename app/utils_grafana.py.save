@@ -1,0 +1,68 @@
+import os
+from dotenv import load_dotenv
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+# AUTO LOAD .env
+load_dotenv()
+
+GRAFANA_URL = os.getenv("GRAFANA_URL")
+GRAFANA_USER = os.getenv("GRAFANA_USER") 
+GRAFANA_PASS = os.getenv("GRAFANA_PASS")
+
+_session = None
+
+def get_grafana_session():
+    global _session
+    if _session:
+        return _session
+    
+    if not all([GRAFANA_URL, GRAFANA_USER, GRAFANA_PASS]):
+        return None
+    
+    _session = requests.Session()
+    login_url = f"{GRAFANA_URL.rstrip('/')}/login"
+    
+    login_data = {"user": GRAFANA_USER, "password": GRAFANA_PASS}
+    r = _session.post(login_url, json=login_data, timeout=10)
+    
+    if r.status_code != 200 or "Logged in" not in r.text:
+        print(f"DEBUG: Login gagal: {r.status_code}")
+        return None
+    
+    print("DEBUG: Grafana login OK")
+    return _session
+
+def grafana_request(method, path, params=None):
+    session = get_grafana_session()
+    if not session:
+        return None, "login_failed"
+    
+    url = f"{GRAFANA_URL.rstrip('/')}{path}"
+    try:
+        r = session.request(method, url, params=params, timeout=10)
+        print(f"DEBUG grafana: {method} {url} status={r.status_code}")
+        
+        if r.status_code == 200:
+            return r.json(), None
+        return None, f"error_{r.status_code}"
+    except Exception as e:
+        return None, str(e)
+
+def check_grafana_health():
+    data, err = grafana_request("GET", "/api/health")
+    return data.get("database") == "ok" if data else False, err or "ok"
+
+def check_dashboard_folder(uid):
+    data, err = grafana_request("GET", f"/api/folders/{uid}")
+    return bool(data), err or "folder_ok"
+
+def check_datasource(name):
+    data, err = grafana_request("GET", "/api/datasources")
+    if err: return False, err
+    for ds in data:
+        if ds.get("name") == name:
+            return True, "datasource_ok"
+    return False, "not_found"
+

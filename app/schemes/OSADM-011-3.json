@@ -1,0 +1,13 @@
+{
+  "lab_id": "OSADM-011-3",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "monitoring_quiz_ok",
+      "description": "File jawaban monitoring query sudah tersimpan dengan benar",
+      "score": 100,
+      "expected": "exists",
+      "cleanup": false
+    }
+  ]
+}

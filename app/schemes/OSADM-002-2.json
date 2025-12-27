@@ -13,7 +13,7 @@
       "type": "command",
       "key": "internal_subnet_cidr_ok",
       "expected": "OK",
-      "description": "Subnet internal-subnet-kelompokX-sijaX punya CIDR 192.20.X.0/24",
+      "description": "Subnet internal-subnet-kelompokX-sijaX punya CIDR",
       "score": 10,
       "command": "openstack subnet show internal-subnet-kelompokX-sijaX -f json"
     },
@@ -46,7 +46,7 @@
       "type": "command",
       "key": "router_ext_gw_ok",
       "expected": "OK",
-      "description": "Router punya external gateway ke external-net-sija dengan fixed IP sesuai range kelompok",
+      "description": "Router punya external gateway ke external-net-sija dengan fixed IP sesuai range",
       "score": 10,
       "command": "openstack router show router-kelompokX-sijaX -f json"
     },

@@ -3,19 +3,19 @@
   "criteria": [
     {
       "type": "command",
-      "key": "http_backend1_failover_ok",
-      "description": "Saat apache backend2 mati, semua request HTTP ke FIP 172.20.10.63 tetap dilayani backend1",
+      "key": "http_backend2_failover_ok",
+      "description": "Apache backend2 mati, semua request HTTP tetap dilayani backend2",
       "score": 50,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "expected": "exists",
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "ssh_backend2_failover_ok",
-      "description": "Saat ssh backend1 mati, koneksi ssh ke FIP 172.20.10.63:2222 berhasil login ke backend2",
+      "key": "ssh_backend1_failover_ok",
+      "description": "SSH backend1 mati, koneksi ssh berhasil login ke backend1",
       "score": 50,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "expected": "exists",
+      "cleanup": false
     }
   ]
 }

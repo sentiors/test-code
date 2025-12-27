@@ -1,0 +1,26 @@
+{
+  "labid": "OSADM-012-3",
+  "criteria": [
+    {
+      "type": "grafana_alert_rule",
+      "key": "vCPU Usage (Time series) - kelompokxsijax",
+      "description": "Alert rule vCPU Usage sudah dibuat sesuai LAB 12.2",
+      "score": 40,
+      "expected": "exists"
+    },
+    {
+      "type": "grafana_alert_firing",
+      "key": "vCPU Usage (Time series) - kelompokxsijax",
+      "description": "Selama load test, alert vCPU Usage status firing",
+      "score": 50,
+      "expected": "firing"
+    },
+    {
+      "type": "gmail_alert_email",
+      "key": "",
+      "description": "Email alert firing terkirim ke email user",
+      "score": 10,
+      "expected": "exists"
+    }
+  ]
+}

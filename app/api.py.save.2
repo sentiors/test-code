@@ -1,7 +1,5 @@
-from flask import Flask, request, jsonify, render_template, make_response, redirect
+from flask import Flask, request, jsonify, render_template, make_response
 import os
-import urllib.parse as urlparse
-import requests
 import json
 from .utils import (
     check_gitlab_pipeline,
@@ -18,7 +16,6 @@ from .utils_grafana import (
     check_dashboard_folder,
     check_datasource,
 )
-from .utils_gmail import check_alert_email_sent_any
 from .database import db_session, init_db
 from .models import User, Lab, GradingResult
 from datetime import datetime
@@ -35,72 +32,12 @@ SCHEME_PATH = "/opt/grading/app/schemes/"
 GITLAB_URL = "https://gitlab.smkn1cibinong.sch.id"
 ACTIVE_LABS = {}
 
-#==============================(gitlab)====================================#
 def get_latest_pipeline(project_id, ref="main"):
     url = f"{GITLAB_URL}/api/v4/projects/{project_id}/pipelines"
     headers = {"Authorization": f"Bearer {GITLAB_TOKEN}"}
 
     r = requests.get(url, headers=headers, params={"ref": ref})
     return r.json()[0]
-
-#==============================(api-gmail)====================================#
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://grading.smkn1cibinong.sch.id/oauth2callback")
-
-
-@app.route("/auth/google")
-def auth_google():
-    # Redirect user ke halaman login Google
-    base = "https://accounts.google.com/o/oauth2/v2/auth"
-    params = {
-        "client_id": GOOGLE_CLIENT_ID,
-        "redirect_uri": REDIRECT_URI,
-        "response_type": "code",
-        "scope": "https://mail.google.com/",
-        "access_type": "offline",  # supaya dapat refresh_token
-        "prompt": "consent",       # paksa consent biar refresh_token keluar
-    }
-    url = base + "?" + urlparse.urlencode(params)
-    return redirect(url)
-
-
-@app.route("/oauth2callback")
-def oauth2callback():
-    code = request.args.get("code")
-    error = request.args.get("error")
-
-    if error:
-        return f"OAuth error: {error}", 400
-    if not code:
-        return "Missing code", 400
-
-    token_url = "https://oauth2.googleapis.com/token"
-    data = {
-        "code": code,
-        "client_id": GOOGLE_CLIENT_ID,
-        "client_secret": GOOGLE_CLIENT_SECRET,
-        "redirect_uri": REDIRECT_URI,
-        "grant_type": "authorization_code",
-    }
-
-    resp = requests.post(token_url, data=data, timeout=10)
-    if resp.status_code != 200:
-        return f"Token exchange failed: {resp.status_code} {resp.text}", 400
-
-    tokens = resp.json()
-    # Penting: tokens["refresh_token"]
-    print("DEBUG GOOGLE TOKENS:", tokens, flush=True)
-
-    # TODO: simpan refresh_token ke DB/file yang aman
-    # sementara balikin ke browser dulu (nanti jangan di-production)
-    return jsonify({
-        "message": "OAuth success, tokens received",
-        "tokens": tokens,
-    })
-
-
-
 
 
 def sync_labs_from_schemes():
@@ -436,15 +373,16 @@ def grade_lab():
                 ok, msg = check_grafana_alert_rule(key)
                 actual_value = msg
             elif ctype == "grafana_alert_firing":
-                ok, msg = check_grafana_alert_history(key)
-                print("DEBUG grafana_alert_history:", key, "ok=", ok, "msg=", msg, flush=True)
+                ok, msg = check_grafana_alert_history(key, minutes=60)
+                
                 actual_value = msg
-                failed = not ok
-            elif ctype == "gmail_alert_email":
-                ok, msg = check_alert_email_sent_any()
-                actual_value = msg
-                failed = not ok
 
+                # Reset failed untuk tipe ini, lalu tentukan gagal/sukses murni dari ok/expected
+                failed = False
+                if expected == "firing":
+                    failed = not ok
+                elif expected == "exists":
+                    failed = not ok
 
             if not failed:
                 total_score += score
@@ -917,7 +855,7 @@ def scheme_editor():
 
 @app.route('/create_scheme', methods=['GET', 'POST'])
 def create_scheme():
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "grafana_alert_rule", "grafana_alert_firing", "gmail_alert_email"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "grafana_alert_rule", "grafana_alert_firing"]
     expected = {
         "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
@@ -934,7 +872,6 @@ def create_scheme():
         "image": ["exists"],
         "grafana_alert_rule": ["exists"],
         "grafana_alert_firing": ["exists"],
-        "gmail_alert_email": ["exists"],
     }
 
     if request.method == "GET":
@@ -1042,7 +979,7 @@ def edit_scheme_page(lab_id):
     with open(scheme_file, "r") as f:
         scheme = json.load(f)
 
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "grafana_alert_rule", "grafana_alert_firing", "gmail_alert_email"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "grafana_alert_rule", "grafana_alert_firing"]
 
     expected = {
         "command": ["true", "false"],
@@ -1060,7 +997,6 @@ def edit_scheme_page(lab_id):
         "image": ["exists"],
         "grafana_alert_rule": ["exists"],
         "grafana_alert_firing": ["exists"],
-        "gmail_alert_email": ["exists"],
     }
 
     return render_template("edit_scheme.html", scheme=scheme, types=types, expected=expected)
@@ -1168,7 +1104,7 @@ def home():
 
 @app.route('/add_scheme')
 def add_scheme():
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "grafana_alert_rule", "grafana_alert_firing", "gmail_alert_email"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "grafana_alert_rule", "grafana_alert_firing"]
     expected = {
         "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
@@ -1185,7 +1121,6 @@ def add_scheme():
         "image": ["exists"],
         "grafana_alert_rule": ["exists"],
         "grafana_alert_firing": ["exists"],
-        "gmail_alert_email": ["exists"],
     }
 
     return render_template('add_scheme.html', types=types, expected=expected)

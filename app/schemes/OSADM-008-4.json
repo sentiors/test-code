@@ -3,19 +3,19 @@
   "criteria": [
     {
       "type": "command",
-      "key": "merge_log_ok",
-      "description": "History main di node1 berisi commit merge dan resolve conflict sesuai lab 8.4",
+      "key": "osadm-008-4-merge-log",
+      "expected": "exists",
+      "description": "Log merge conflict ditemukan",
       "score": 50,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "remote_files_ok",
-      "description": "Clone verify-dir-0084 berisi README.md dan file1.txt, file2.txt, file3.txt dengan isi README sesuai patokan",
+      "key": "osadm-008-4-content-check",
+      "expected": "exists",
+      "description": "README.md berisi gabungan update dari keseluruhan branch",
       "score": 50,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "cleanup": false
     }
   ]
 }

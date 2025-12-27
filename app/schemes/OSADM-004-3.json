@@ -5,17 +5,33 @@
       "type": "command",
       "key": "vol_horizon_created_attached_ok",
       "expected": "OK",
-      "description": "Volume 3GB dengan nama vol-horizon-kelompokX-sijaX sudah dibuat dan ter-attach ke noble-horizon-ins-kelompokX-sijaX pada /dev/vdb",
-      "score": 50,
-      "command": "openstack volume show vol-horizon-PLACEHOLDER-sijax -f json"
+      "description": "Volume sudah dibuat dan ter-attach ke instance pada /dev/vdb",
+      "score": 25,
+      "cleanup": false
     },
     {
       "type": "command",
       "key": "fs_horizon_mounted_ok",
       "expected": "OK",
-      "description": "Volume /dev/vdb hasil GUI sudah diformat ext4 dan di-mount ke /data di dalam noble-horizon-ins-kelompokX-sijaX",
-      "score": 50,
-      "command": "ssh -o StrictHostKeyChecking=no ubuntu@FIP_PLACEHOLDER sudo lsblk -f"
+      "description": "Volume /dev/vdb sudah di-mount ke /data",
+      "score": 25,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "data_horizon_files_ok",
+      "expected": "OK",
+      "description": "File words.txt, debian-index.gz, dan readme sudah ada di /data",
+      "score": 25,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "checksum_horizon_ok",
+      "expected": "OK",
+      "description": "Checksum.txt sudah dibuat dengan hash dari semua file di /data",
+      "score": 25,
+      "cleanup": false
     }
   ]
 }

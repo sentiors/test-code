@@ -4,42 +4,50 @@
     {
       "type": "command",
       "key": "vol_2048_created_ok",
-      "expected": "OK",
+      "expected": "exists",
       "description": "Volume vol-2048-kelompokX-sijaX ukuran 2GB sudah dibuat",
-      "score": 20,
-      "command": "echo OK"
+      "score": 15,
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "backup_mapped_and_copied_ok",
-      "expected": "OK",
-      "description": "Volume vol-2048-kelompokX-sijaX sudah di-mount ke /backup/kelompokXsijaX dan isi /var/www/kelompokXsijaX sudah tersalin",
-      "score": 20,
-      "command": "echo OK"
+      "key": "vol_snapshot_created_ok",
+      "expected": "exists",
+      "description": "Volume snapshot snap-vol2048-kelompokX-sijaX sudah dibuat",
+      "score": 15,
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "snapshots_created_ok",
-      "expected": "OK",
-      "description": "Snapshot instance dan volume sudah dibuat",
-      "score": 20,
-      "command": "echo OK"
+      "key": "vm_snapshot_created_ok",
+      "expected": "exists",
+      "description": "Instance snapshot snap-vm2048-kelompokX-sijaX sudah dibuat dari instance 2048-quiz003-1",
+      "score": 15,
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "rescue_vm_and_volume_ok",
-      "expected": "OK",
-      "description": "VM rescue dan volume snapshot sudah dibuat dan di-mount",
-      "score": 20,
-      "command": "echo OK"
+      "key": "vm_rescue_created_ok",
+      "expected": "exists",
+      "description": "VM rescue sudah dibuat dari snapshot dan aktif",
+      "score": 15,
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "nginx_root_and_app_ok",
-      "expected": "OK",
-      "description": "NGINX root sudah diarahkan ke /backup/kelompokXsijaX dan aplikasi bisa diakses lewat Floating IP lama",
-      "score": 20,
-      "command": "echo OK"
+      "key": "vol_snapshot_attached_ok",
+      "expected": "exists",
+      "description": "Volume snapshot sudah di-attach ke VM rescue pada /dev/vd*",
+      "score": 15,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "backup_mounted_and_app_ok",
+      "expected": "exists",
+      "description": "Volume backup sudah di-mount dan aplikasi bisa diakses via FIP",
+      "score": 15,
+      "cleanup": false
     }
   ]
 }

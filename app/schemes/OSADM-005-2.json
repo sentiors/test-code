@@ -3,35 +3,43 @@
   "criteria": [
     {
       "type": "command",
-      "key": "backends_ready_ok",
-      "expected": "OK",
-      "description": "Kedua VM backend sudah menjalankan Apache dan menampilkan halaman masing-masing",
-      "score": 25,
-      "command": "echo OK"
+      "key": "haproxy_vm_ok",
+      "description": "VM HAProxy sudah ada dan aktif",
+      "score": 15,
+      "expected": "exists",
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "haproxy_installed_ok",
-      "expected": "OK",
-      "description": "Paket HAProxy sudah terinstall di VM haproxy-kelompokX-sijaX",
-      "score": 25,
-      "command": "echo OK"
+      "key": "backends_vm_ok",
+      "description": "VM Backend1 dan Backend2 sudah ada dan aktif",
+      "score": 15,
+      "expected": "exists",
+      "cleanup": false
     },
     {
       "type": "command",
       "key": "haproxy_config_ok",
-      "expected": "OK",
-      "description": "Konfigurasi HAProxy memiliki frontend http_front dan backend http_back dengan dua server backend",
-      "score": 25,
-      "command": "echo OK"
+      "description": "HAProxy config sudah sesuai ketentuan",
+      "score": 30,
+      "expected": "exists",
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "haproxy_roundrobin_ok",
-      "expected": "OK",
-      "description": "Akses HTTP melalui Floating IP HAProxy melakukan load balancing ke kedua backend (roundrobin)",
+      "key": "haproxy_fip_ok",
+      "description": "HAProxy punya FIP, backends tidak punya FIP",
+      "score": 15,
+      "expected": "exists",
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "haproxy_backend_response_ok",
+      "description": "Curl ke FIP HAProxy dapat response dari backend1 dan backend2 bergantian",
       "score": 25,
-      "command": "echo OK"
+      "expected": "exists",
+      "cleanup": false
     }
   ]
 }

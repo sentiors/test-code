@@ -1,0 +1,21 @@
+{
+  "lab_id": "OSADM-012-3",
+  "criteria": [
+    {
+      "type": "grafana_alert_rule",
+      "key": "vCPU Usage Time series - kelompokxsijax",
+      "expected": "exists",
+      "description": "Alert rule vCPU Usage sudah dibuat sesuai LAB 12.2",
+      "score": 40,
+      "cleanup": false
+    },
+    {
+      "type": "grafana_alert_firing",
+      "key": "vCPU Usage Time series - kelompokxsijax",
+      "expected": "exists",
+      "description": "Menjalankan load test dan alert berada pada status firing",
+      "score": 60,
+      "cleanup": false
+    }
+  ]
+}

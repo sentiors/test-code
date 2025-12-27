@@ -13,33 +13,32 @@
       "type": "command",
       "key": "gui_server_params_ok",
       "expected": "OK",
-      "description": "Flavor, image, keypair, security group, dan network instance sesuai",
+      "description": "Flavor, image, keypair, security group, dan network instance sesuai instruksi",
       "score": 30,
-      "cleanup": false
     },
     {
       "type": "command",
       "key": "gui_server_userdata_ok",
       "expected": "OK",
-      "description": "cloud-init berisi hostname dengan konfigurasi yang benar",
+      "description": "cloud-init berisi hostname dan userlab33 dengan konfigurasi yang benar",
       "score": 20,
-      "cleanup": false
+      "command": "openstack server show noble-horizon-ins-PLACEHOLDER -f json"
     },
     {
       "type": "command",
       "key": "gui_server_fip_ok",
       "expected": "OK",
-      "description": "Instance sudah terasosiasi dengan Floating IP",
+      "description": "Instance sudah terasosiasi dengan Floating IP (IP kedua dari range FIP per kelompok)",
       "score": 15,
-      "cleanup": false
+      "command": "openstack server show noble-horizon-ins-PLACEHOLDER -f json"
     },
     {
       "type": "command",
       "key": "gui_nginx_ok",
       "expected": "OK",
-      "description": "Webserver nginx aktif dan diakses via Floating IP",
+      "description": "Webserver nginx aktif dan tampilan default bisa diakses via Floating IP",
       "score": 15,
-      "cleanup": false
+      "command": "curl -I http://FIP_PLACEHOLDER/"
     }
   ]
 }

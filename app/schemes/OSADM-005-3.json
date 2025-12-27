@@ -3,35 +3,51 @@
   "criteria": [
     {
       "type": "command",
-      "key": "ssh_daemon_two_ports_ok",
-      "expected": "OK",
-      "description": "SSH daemon di HAProxy listen di port 22 dan 2222",
-      "score": 25,
-      "command": "echo OK"
+      "key": "haproxy_vm_ok",
+      "description": "VM HAProxy sudah ada dan aktif",
+      "score": 10,
+      "expected": "exists",
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "security_group_2222_ok",
-      "expected": "OK",
-      "description": "Security group membuka port TCP 2222 untuk administrasi HAProxy",
-      "score": 25,
-      "command": "echo OK"
+      "key": "backends_vm_ok",
+      "description": "VM Backend1 dan Backend2 sudah ada dan aktif",
+      "score": 10,
+      "expected": "exists",
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "haproxy_ssh_lb_config_ok",
-      "expected": "OK",
-      "description": "Konfigurasi HAProxy memiliki frontend ssh_front dan backend ssh_back untuk TCP 22",
+      "key": "haproxy_ssh_config_ok",
+      "description": "HAProxy SSH config sudah sesuai",
       "score": 25,
-      "command": "echo OK"
+      "expected": "exists",
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "haproxy_ssh_lb_working_ok",
-      "expected": "OK",
-      "description": "Koneksi SSH ke FIP HAProxy diarahkan ke salah satu backend (stick-table aktif)",
-      "score": 25,
-      "command": "echo OK"
+      "key": "haproxy_ssh_port_ok",
+      "description": "HAProxy SSH listen di port 22 dan 2222",
+      "score": 20,
+      "expected": "exists",
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "backend_ssh_service_ok",
+      "description": "SSH service aktif di backend1 dan backend2 port 22",
+      "score": 20,
+      "expected": "exists",
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "haproxy_ssh_roundrobin_ok",
+      "description": "SSH roundrobin ke backend1 dan backend2 bergantian",
+      "score": 15,
+      "expected": "exists",
+      "cleanup": false
     }
   ]
 }

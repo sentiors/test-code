@@ -21,7 +21,7 @@
       "type": "command",
       "key": "flavor_spec_ok",
       "expected": "OK",
-      "description": "Cek spesifikasi flavor (1 vCPU, 512MB RAM, 4GB disk)",
+      "description": "Cek spesifikasi flavor",
       "score": 25,
       "command": "openstack flavor show fl-lab001-2-PLACEHOLDER -f json"
     },

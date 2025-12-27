@@ -3,19 +3,19 @@
   "criteria": [
     {
       "type": "command",
-      "key": "commit_message_ok",
-      "description": "HEAD main di node1 punya history yang mengandung commit message \"Add multiple files (file1, file2, file3) kelompokX sijaX\"",
+      "key": "osadm-008-3-commit-log",
+      "expected": "exists",
+      "description": "Riwayat commit 'Add multiple files' ditemukan",
       "score": 50,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "remote_files_ok",
-      "description": "Clone verify-dir-0083 berisi README.md, file1.txt, file2.txt, file3.txt",
+      "key": "osadm-008-3-files-check",
+      "expected": "exists",
+      "description": "File 1, 2, dan 3 ditemukan di ~/verify-dir-0083",
       "score": 50,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "cleanup": false
     }
   ]
 }

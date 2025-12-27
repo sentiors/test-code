@@ -3,28 +3,19 @@
   "criteria": [
     {
       "type": "command",
-      "key": "git_global_config_ok",
-      "description": "Git global user.name, user.email, dan init.defaultBranch main sudah dikonfigurasi dengan benar",
-      "score": 30,
-      "expected": "OK",
-      "command": ""
+      "key": "osadm-008-2-git-config",
+      "expected": "exists",
+      "description": "Git Global Config sudah benar",
+      "score": 50,
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "local_repo_and_remote_ok",
-      "description": "Repo lokal our-project-kelompokX-sijaX sudah di-init dan remote origin GitLab sudah benar",
-      "score": 30,
-      "expected": "OK",
-      "command": ""
-    },
-    {
-      "type": "command",
-      "key": "readme_committed_and_pushed_ok",
-      "description": "README.md berisi Hai-kelompokX-sijaX sudah di-commit dan di-push ke remote origin main",
-      "score": 40,
-      "expected": "OK",
-      "command": ""
+      "key": "osadm-008-2-readme-check",
+      "expected": "exists",
+      "description": "README.md berhasil di-push",
+      "score": 50,
+      "cleanup": false
     }
   ]
 }
-

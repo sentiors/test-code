@@ -10,11 +10,16 @@ services:
     volumes:
       - ./db.sqlite:/opt/grading/db.sqlite   # pakai file db dari host
       - ./logs:/opt/grading/logs            # kalau mau log keluar ke host
+      - /opt/grading:/opt/grading
       - /opt/grading/app:/opt/grading/app
       - /opt/grading/app/schemes:/opt/grading/app/schemes
       - /opt/grading/app/api.py:/opt/grading/app/api.py:ro
       - /var/log/gradingctl:/var/log/gradingctl
     restart: unless-stopped
+    environment:
+      - GRAFANA_URL=http://100.70.220.18:3001
+      - GRAFANA_USER=admin
+      - GRAFANA_PASS=29CRk6YAIEnVJPj16dd798IByF06EV5kxo9ljULK
     env_file:
       - .env
     networks:

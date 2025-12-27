@@ -21,7 +21,7 @@
       "type": "command",
       "key": "flavor_spec_ok",
       "expected": "OK",
-      "description": "Cek spesifikasi flavor Horizon (1 vCPU, 1GB RAM, 4GB disk)",
+      "description": "Cek spesifikasi flavor Horizon",
       "score": 25,
       "cleanup": false
     },

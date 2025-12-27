@@ -5,7 +5,6 @@
       "type": "gitlab_pipeline",
       "key": "kelompokx-sijax/quiz-runner-kelompokx-sijax",
       "expected": "success",
-      "job_name": "test-container",
       "description": "Pipeline quiz-runner-kelompokx-sijax sukses",
       "score": 50,
       "cleanup": false
@@ -15,7 +14,15 @@
       "key": "quiz9-web-kelompokxsijax:latest",
       "expected": "exists",
       "description": "Cek image quiz9-web-kelompokxsijax ada",
-      "score": 50,
+      "score": 30,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "osadm-quiz-009-1-curl-check",
+      "expected": "exists",
+      "description": "Cek konten web port 8081 di node1",
+      "score": 20,
       "cleanup": false
     }
   ]

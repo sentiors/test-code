@@ -3,35 +3,43 @@
   "criteria": [
     {
       "type": "command",
-      "key": "featureb_branch_remote_ok",
-      "description": "Branch featureb-kelompokX sudah dibuat dan di-push ke remote origin",
-      "score": 30,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "key": "quiz-008-1-branch-check",
+      "expected": "exists",
+      "description": "Branch 'featureb-kelompokX' berhasil dibuat",
+      "score": 20,
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "merge_featureb_to_main_ok",
-      "description": "Branch featureb-kelompokX sudah di-merge ke main dan di-push ke origin/main",
-      "score": 30,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "key": "quiz-008-1-feature-commit",
+      "expected": "exists",
+      "description": "Commit fitur 'Update README.md in feature branch' ditemukan",
+      "score": 20,
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "quiz_conflict_resolved_ok",
-      "description": "README.md sudah bebas conflict marker dan berisi hasil merge akhir sesuai kesepakatan tim",
-      "score": 25,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "key": "quiz-008-1-merge-log",
+      "expected": "exists",
+      "description": "Commit resolve conflict 'Resolve merge conflict' ditemukan",
+      "score": 20,
+      "cleanup": false
     },
     {
       "type": "command",
-      "key": "quiz_history_merge_and_resolve_ok",
-      "description": "Riwayat commit mengandung commit merge dan commit resolve conflict di README.md",
-      "score": 15,
-      "expected": "OK",
-      "command": "echo PLACEHOLDER"
+      "key": "quiz-008-1-verify-dir",
+      "expected": "exists",
+      "description": "Folder verifikasi 'verify-dir-quiz-0084' sudah dibuat",
+      "score": 20,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "quiz-008-1-content-check",
+      "expected": "exists",
+      "description": "README.md berisi konten gabungan (Main + Feature)",
+      "score": 20,
+      "cleanup": false
     }
   ]
 }

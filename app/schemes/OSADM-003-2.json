@@ -7,23 +7,23 @@
       "expected": "OK",
       "description": "Cek instance cirros-cli-kelompokX-sijaX sudah dibuat",
       "score": 30,
-      "command": "openstack server list -f value -c Name"
+      "cleanup": false
     },
     {
       "type": "command",
       "key": "server_params_ok",
       "expected": "OK",
-      "description": "Cek flavor, image, keypair, security group, dan network instance sesuai instruksi",
+      "description": "Flavor, image, keypair, security group, dan network instance sesuai",
       "score": 40,
-      "command": "openstack server show cirros-cli-PLACEHOLDER -f json"
+      "cleanup": false
     },
     {
       "type": "command",
       "key": "server_fip_ok",
       "expected": "OK",
-      "description": "Cek instance sudah terasosiasi dengan Floating IP (IP ketiga dari range kelompok)",
+      "description": "Instance sudah terasosiasi dengan Floating IP",
       "score": 30,
-      "command": "openstack server show cirros-cli-PLACEHOLDER -f json"
+      "cleanup": false
     }
   ]
 }
