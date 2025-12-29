@@ -1,0 +1,69 @@
+{
+  "lab_id": "OSADM-CHALLENGE-DEPLOY-STATEFULL",
+  "criteria": [
+    {
+      "type": "gitlab_pipeline",
+      "key": "kelompokx-sijax/inventaris-sekolah-kelompokx-sijax",
+      "expected": "success",
+      "description": "Pipeline inventaris-sekolah-kelompokx-sijax sukses",
+      "score": 25,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "kelompokx-sijax/inventaris-sekolah-kelompokx-sijax",
+      "expected": "OK",
+      "description": "Project name inventaris-sekolah-kelompokx-sijax",
+      "score": 10,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "web_staging_ok",
+      "expected": "OK",
+      "description": "Web staging accessible (floating IP .7:80)",
+      "score": 15,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "web_production_ok",
+      "expected": "OK",
+      "description": "Web production accessible (floating IP .8:80)",
+      "score": 15,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "volume_attached_ok",
+      "expected": "OK",
+      "description": "Volume db-volume-kelompokxsijax attached /mnt/cinder-db",
+      "score": 15,
+      "cleanup": false
+    },
+    {
+      "type": "image",
+      "key": "inventaris-kelompokx-sijax",
+      "expected": "exists",
+      "description": "Image inventaris-kelompokx-sijax ada",
+      "score": 10,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "container_inventaris_ok",
+      "expected": "OK",
+      "description": "Container inventaris-kelompokx-sijax running",
+      "score": 5,
+      "cleanup": false
+    },
+    {
+      "type": "command",
+      "key": "container_db_ok",
+      "expected": "OK",
+      "description": "Container inventaris-db running",
+      "score": 5,
+      "cleanup": false
+    }
+  ]
+}
