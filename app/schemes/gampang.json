@@ -1,0 +1,13 @@
+{
+  "lab_id": "OSADM-001-2",
+  "criteria": [
+    {
+      "type": "command",
+      "key": "image_name_oks",
+      "expected": "OK",
+      "description": "Cek nama image sesuai format",
+      "score": 100,
+      "command": "openstack image list -f value -c Name"
+    }
+  ]
+}

@@ -116,15 +116,22 @@
         <h1>Grading Results</h1>
         <form class="filter-form" method="GET" action="/results">
             <select name="class_name" id="class_name">
-                <option value="">Select Class</option>
+                <option value="">Pilih Kelas</option>
                 <!-- Daftar class_name akan diisi oleh JavaScript -->
             </select>
+
             <select name="lab_id" id="lab_id">
-                <option value="">Select Lab</option>
+                <option value="">Pilih Lab</option>
                 <!-- Daftar lab_id akan diisi oleh JavaScript -->
             </select>
+
+            <select name="group_name" id="group_name">
+                <option value="">Pilih Kelompok</option>
+                <!-- Daftar lab_id akan diisi oleh JavaScript -->
+            </select>
+
             <select name="search_name" id="search_name">
-                <option value="">Select Name</option>
+                <option value="">Pilih Nama</option>
                 <!-- Daftar lab_id akan diisi oleh JavaScript -->
             </select>
             <button type="submit">Filter</button>
@@ -135,7 +142,7 @@
                 <tr>
                     <th>Nama</th>
                     <th>Kelas</th>
-                    <th>Grup</th>
+                    <th>Kelompok</th>
                     <th>Lab ID</th>
                     <th>Score</th>
                     <th>Timestamp</th>
@@ -171,15 +178,15 @@
                 {% endfor %}
             </tbody>
         </table>
-        <a href="/download-results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}&search_name={{ search_name or '' }}" download="grading_results.csv" class="btn-download">Download Results as CSV</a>
+        <a href="/download-results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}&search_name={{ search_name or '' }}&group_name={{ group_name or '' }}" download="grading_results.csv" class="btn-download">Download Results as CSV</a>
 
         <div class="pagination">
             {% if page > 1 %}
-                <a href="/results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}&search_name={{ search_name or '' }}&page={{ page - 1 }}" class="btn">Previous</a>
+                <a href="/results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}&search_name={{ search_name or '' }}&group_name={{ group_name or '' }}&page={{ page - 1 }}" class="btn">Previous</a>
             {% endif %}
             <span>Page {{ page }} of {{ total_pages }}</span>
             {% if page < total_pages %}
-                <a href="/results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}&search_name={{ search_name or '' }}&page={{ page + 1 }}" class="btn">Next</a>
+                <a href="/results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}&search_name={{ search_name or '' }}&group_name={{ group_name or '' }}&page={{ page + 1 }}" class="btn">Next</a>
             {% endif %}
         </div>
     </div>
@@ -220,6 +227,29 @@
                 option.textContent = lab.lab_id;
                 labSelect.appendChild(option);
             });
+
+	    // --- ISI DROPDOWN KELOMPOK (group_name) ---
+	    const groupSelect = document.getElementById('group_name');
+	    const groupMap = new Map();
+
+	    data.users.forEach(user => {
+	        const gName = (user.group_name || '').trim();
+	        if (!gName) return;
+	        if (!groupMap.has(gName.toLowerCase())) {
+	            groupMap.set(gName.toLowerCase(), gName);
+	        }
+	    });
+
+	    groupMap.forEach((displayName) => {
+	        const option = document.createElement('option');
+	        option.value = displayName;
+	        option.textContent = displayName;
+	        // Tandai sebagai selected jika sedang memfilter kelompok ini
+	        if ("{{ group_name or '' }}" === displayName) {
+	            option.selected = true;
+	        }
+	        groupSelect.appendChild(option);
+	    });
 
             // NEW: dropdown user by NAME (unik)
             const userSelect = document.getElementById('search_name');
@@ -272,6 +302,7 @@
             document.getElementById('class_name').value = '';
             document.getElementById('lab_id').value = '';
             document.getElementById('search_name').value = '';
+	    document.getElementById('group_name').value = ''; // Tambahkan ini
             window.location.href = '/results';  // Reload halaman tanpa filter
         }
     </script>

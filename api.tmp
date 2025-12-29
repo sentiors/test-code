@@ -331,6 +331,7 @@ def grade_lab():
 
         # Ambil username dari token
         username = token.split("-")[2]
+user = dbsession.query(User).filter_by(username=username).first(); if not user: return jsonify({"error": "User not found"}), 404
         print(f"Username: {username}, Class Name: {class_name}")
 
         if not isinstance(client_data, dict):
@@ -359,11 +360,6 @@ def grade_lab():
         feedback_failed = []
         feedback_success = []
 
-        # Ambil info user dan grup
-        user_info = db_session.query(User).filter_by(username=username).first()
-        if not user_info:
-            return jsonify({"error": "User not found"}), 404
-
         # ========= LOGIKA PENILAIAN PER KRITERIA =========
         for criterion in scheme.get("criteria", []):
             ctype = criterion.get("type")
@@ -374,8 +370,8 @@ def grade_lab():
 
             # Ambil suffix dinamis berdasarkan user yang sedang di-grade
             # suffix: kelompok1-sija1 | suffix_clean: kelompok1sija1
-            suffix = f"kelompok{user_info.group_name}-sija{user_info.class_name}"
-            suffix_clean = f"kelompok{user_info.group_name}sija{user_info.class_name}"
+            suffix = f"kelompok{user.group_num}-sija{user.class_type}"
+            suffix_clean = f"kelompok{user.group_num}sija{user.class_type}"
 
             # REPLACEMENT: Ubah key dari JSON (placeholder) jadi kenyataan
             key = criterion.get("key", "")
@@ -532,9 +528,9 @@ def grade_lab():
                 )
 
             # Ambil info user dan grup
-            #user_info = db_session.query(User).filter_by(username=username).first()
-            #if not user_info:
-            #    return jsonify({"error": "User not found"}), 404
+            user_info = db_session.query(User).filter_by(username=username).first()
+            if not user_info:
+                return jsonify({"error": "User not found"}), 404
 
             group_name = user_info.group_name
             class_name = user_info.class_name
@@ -766,7 +762,6 @@ def show_results():
         class_name = request.args.get("class_name")
         lab_id = request.args.get("lab_id")
         search_name = request.args.get("search_name")
-        group_name = request.args.get("group_name")
         page = int(request.args.get("page", 1))
         per_page = 10
 
@@ -774,15 +769,10 @@ def show_results():
         users = db_session.query(User).all()
         labs = db_session.query(Lab).all()
 
-        # Ambil daftar kelompok unik dari tabel User untuk dropdown filter
-        group_list = db_session.query(User.group_name).distinct().all()
-        group_list = [g[0] for g in group_list if g[0]]
-
         # Ambil data dari tabel grading_results dengan filter
         query = (
             db_session.query(GradingResult)
             .join(User, User.username == GradingResult.username)
-            .order_by(GradingResult.timestamp.desc())
         )
 
         if class_name:
@@ -791,8 +781,6 @@ def show_results():
             query = query.filter(GradingResult.lab_id == lab_id)
         if search_name:
             query = query.filter(User.name.ilike(f"%{search_name}%"))
-        if group_name:
-            query = query.filter(User.group_name == group_name)
 
         total_results = query.count()
         results = query.offset((page - 1) * per_page).limit(per_page).all()
@@ -800,7 +788,7 @@ def show_results():
         from datetime import timedelta
         for result in results:
             if result.timestamp:
-                result.local_timestamp = result.timestamp
+                result.local_timestamp = result.timestamp + timedelta(hours=7)
             else:
                 result.local_timestamp = '-'
 
@@ -814,12 +802,10 @@ def show_results():
             results=results,
             users=users,
             labs=labs,
-            group_list=group_list,
             users_not_started_lab=users_not_started_lab,
             class_name=class_name,
             lab_id=lab_id,
             search_name=search_name,
-            group_name=group_name,
             page=page,
             total_pages=(total_results + per_page - 1) // per_page
         )

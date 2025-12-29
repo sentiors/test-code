@@ -6,6 +6,13 @@ import urllib.parse
 GITLAB_URL = os.getenv("GITLAB_URL")
 GITLAB_TOKEN = os.getenv("GITLAB_TOKEN")
 
+def get_dynamic_suffix(group_num, class_type):
+    # Hasilnya: kelompok1-sija1
+    suffix_standard = f"kelompok{group_num}-sija{class_type}"
+
+    # Hasilnya: kelompok1sija1 (tanpa strip, buat kriteria tertentu)
+    suffix_clean = f"kelompok{group_num}sija{class_type}"
+    return suffix_standard, suffix_clean
 
 def check_gitlab_project(path_with_namespace: str):
     """
