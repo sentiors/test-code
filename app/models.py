@@ -28,3 +28,12 @@ class GradingResult(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
     status = Column(String, default="ongoing")  # Tambahkan kolom status
     duration = Column(Float)
+
+class LabSession(Base):
+    __tablename__ = 'lab_sessions'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    group_name = Column(String, nullable=False) # Pemilik sesi adalah Grup
+    lab_id = Column(String, ForeignKey('labs.lab_id'), nullable=False)
+    first_start = Column(DateTime) # Dikunci saat orang pertama di grup klik start
+    last_activity = Column(DateTime) # Update setiap kali ada aktivitas
+    total_duration = Column(Float, default=0.0) # Durasi dalam detik

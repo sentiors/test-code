@@ -10,7 +10,7 @@ from .utils import (
     check_gitlab_pipeline_min_success
 )
 from .database import db_session, init_db
-from .models import User, Lab, GradingResult, LabSession
+from .models import User, Lab, GradingResult, LabSessions
 from datetime import datetime
 import pytz
 wib = pytz.timezone("Asia/Jakarta")
@@ -145,28 +145,36 @@ def login():
 @app.route('/start-lab', methods=['POST'])
 def start_lab():
     try:
-        auth_header = request.headers.get("Authorization", "")
-        token = auth_header.replace("Bearer ", "")
-        
-        # FIX 1: Ambil username dari token dulu!
-        username = token.split("-")[2]
-        
-        # FIX 2: Cari user dulu buat dapet group_name
-        user = db_session.query(User).filter_by(username=username).first()
-        if not user: return jsonify({"error": "User not found"}), 404
+        # Ambil token dari header Authorization
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Invalid or missing Authorization header"}), 401
 
+        token = auth_header.split("Bearer ")[-1]
+        if not token:
+            return jsonify({"error": "Token is missing"}), 401
+
+        # Ambil lab_id dari body request
         data = request.get_json()
-        lab_id = data.get("lab_id")
+        if not data or "lab_id" not in data:
+            return jsonify({"error": "Invalid request data"}), 400
 
-        # Shared Timer Logic
-        session = db_session.query(LabSession).filter_by(group_name=user.group_name, lab_id=lab_id).first()
-        if not session:
-            session = LabSession(group_name=user.group_name, lab_id=lab_id, first_start=datetime.now(wib))
-            db_session.add(session)
-            db_session.commit()
+        lab_id = data.get("lab_id")
+        scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
+
+        # Periksa apakah file skema lab ada
+        if not os.path.exists(scheme_file):
+            return jsonify({"error": f"Lab '{lab_id}' not found"}), 404
+
+        from datetime import datetime
+        import pytz
+        wib = pytz.timezone("Asia/Jakarta")
+        start_time = datetime.now(wib)
+
+
 
         # Simpan lab yang aktif untuk token ini
-        ACTIVE_LABS[token] = {"lab_id": lab_id, "status": "active", "start_time": session.first_start}
+        ACTIVE_LABS[token] = {"lab_id": lab_id, "status": "active", "start_time": start_time}
 
         return jsonify({"message": f"Lab '{lab_id}' started successfully"}), 200
 
@@ -233,14 +241,6 @@ def grade_lab():
         class_name = data.get("class_name")
         client_data = data.get("client_data", {})
 
-        try:
-            username = token.split("-")[2]
-        except:
-            return jsonify({"error": "Invalid token"}), 401
-            
-        user_info = db_session.query(User).filter_by(username=username).first()
-        if not user_info: return jsonify({"error": "User not found"}), 404
-
         lab_log_path = f"/var/log/gradingctl/labs/{lab_id}.log"
         os.makedirs(os.path.dirname(lab_log_path), exist_ok=True)
 
@@ -248,8 +248,8 @@ def grade_lab():
             return jsonify({"error": "lab_id and class_name are required"}), 400
 
         # Ambil username dari token
-        #username = token.split("-")[2]
-        #print(f"Username: {username}, Class Name: {class_name}")
+        username = token.split("-")[2]
+        print(f"Username: {username}, Class Name: {class_name}")
 
         if not isinstance(client_data, dict):
             return jsonify({"error": "Invalid client data format"}), 400
@@ -399,21 +399,10 @@ def grade_lab():
         print(f"Total score calculated: {total_score}")
 
         try:
-            session = db_session.query(LabSession).filter_by(group_name=user_info.group_name, lab_id=lab_id).first()
-            if session:
-                end_time = datetime.now(wib)
-                # Hitung durasi dari start pertama kali grup mulai (mau Sila atau Isla yg klik)
-                duration = (end_time - session.first_start.replace(tzinfo=wib)).total_seconds()
-    
-                # Update aktivitas terakhir grup
-                session.last_activity = end_time
-                session.total_duration = duration
-                db_session.commit()
-
             # Hitung durasi
-            #start_time = active_lab.get("start_time")
-            #end_time = datetime.now(wib)
-            #duration = (end_time - start_time).total_seconds() if start_time else None
+            start_time = active_lab.get("start_time")
+            end_time = datetime.now(wib)
+            duration = (end_time - start_time).total_seconds() if start_time else None
 
             # Penalty waktu (min 80, hanya kalau nilai > 0)
             max_duration = 180   # 3 menit (detik)
