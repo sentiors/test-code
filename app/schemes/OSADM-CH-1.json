@@ -1,5 +1,5 @@
 {
-  "lab_id": "OSADM-CHALLENGE-DEPLOY-STATEFULL",
+  "lab_id": "OSADM-CH-1",
   "criteria": [
     {
       "type": "gitlab_pipeline",
@@ -10,10 +10,10 @@
       "cleanup": false
     },
     {
-      "type": "command",
+      "type": "gitlab_project",
       "key": "kelompokx-sijax/inventaris-sekolah-kelompokx-sijax",
       "expected": "OK",
-      "description": "Project name inventaris-sekolah-kelompokx-sijax",
+      "description": "Project name inventaris-sekolah-kelompokx-sijax ada",
       "score": 10,
       "cleanup": false
     },
@@ -21,7 +21,7 @@
       "type": "command",
       "key": "web_staging_ok",
       "expected": "OK",
-      "description": "Web staging accessible (floating IP .7:80)",
+      "description": "Web staging dapat diakses",
       "score": 15,
       "cleanup": false
     },
@@ -29,7 +29,7 @@
       "type": "command",
       "key": "web_production_ok",
       "expected": "OK",
-      "description": "Web production accessible (floating IP .8:80)",
+      "description": "Web production dapat diakses",
       "score": 15,
       "cleanup": false
     },
@@ -37,7 +37,7 @@
       "type": "command",
       "key": "volume_attached_ok",
       "expected": "OK",
-      "description": "Volume db-volume-kelompokxsijax attached /mnt/cinder-db",
+      "description": "Volume db-volume-kelompokxsijax terpasang pada /mnt/cinder-db",
       "score": 15,
       "cleanup": false
     },
@@ -53,7 +53,7 @@
       "type": "command",
       "key": "container_inventaris_ok",
       "expected": "OK",
-      "description": "Container inventaris-kelompokx-sijax running",
+      "description": "Container inventaris-kelompokx-sijax berjalan",
       "score": 5,
       "cleanup": false
     },
@@ -61,7 +61,7 @@
       "type": "command",
       "key": "container_db_ok",
       "expected": "OK",
-      "description": "Container inventaris-db running",
+      "description": "Container inventaris-db berjalan",
       "score": 5,
       "cleanup": false
     }

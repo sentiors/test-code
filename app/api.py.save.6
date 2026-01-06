@@ -1,7 +1,5 @@
-from flask import Flask, request, jsonify, render_template, make_response, redirect
+from flask import Flask, request, jsonify, render_template, make_response
 import os
-import urllib.parse as urlparse
-import requests
 import json
 from .utils import (
     check_gitlab_pipeline,
@@ -11,14 +9,6 @@ from .utils import (
     check_gitlab_pipeline_two_success,
     check_gitlab_pipeline_min_success
 )
-from .utils_grafana import (
-    check_grafana_alert_rule,
-    check_grafana_alert_history,
-    check_grafana_health,
-    check_dashboard_folder,
-    check_datasource,
-)
-from .utils_gmail import check_alert_email_sent_any
 from .database import db_session, init_db
 from .models import User, Lab, GradingResult, LabSession
 from datetime import datetime
@@ -28,7 +18,6 @@ timestamp = datetime.now(wib)
 import csv
 from io import StringIO
 import subprocess
-import re
 
 app = Flask(__name__)
 
@@ -36,7 +25,6 @@ SCHEME_PATH = "/opt/grading/app/schemes/"
 GITLAB_URL = "https://gitlab.smkn1cibinong.sch.id"
 ACTIVE_LABS = {}
 
-#==============================(gitlab)====================================#
 def get_latest_pipeline(project_id, ref="main"):
     url = f"{GITLAB_URL}/api/v4/projects/{project_id}/pipelines"
     headers = {"Authorization": f"Bearer {GITLAB_TOKEN}"}
@@ -44,61 +32,6 @@ def get_latest_pipeline(project_id, ref="main"):
     r = requests.get(url, headers=headers, params={"ref": ref})
     return r.json()[0]
 
-#==============================(api-gmail)====================================#
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://grading.smkn1cibinong.sch.id/oauth2callback")
-
-
-@app.route("/auth/google")
-def auth_google():
-    # Redirect user ke halaman login Google
-    base = "https://accounts.google.com/o/oauth2/v2/auth"
-    params = {
-        "client_id": GOOGLE_CLIENT_ID,
-        "redirect_uri": REDIRECT_URI,
-        "response_type": "code",
-        "scope": "https://mail.google.com/",
-        "access_type": "offline",  # supaya dapat refresh_token
-        "prompt": "consent",       # paksa consent biar refresh_token keluar
-    }
-    url = base + "?" + urlparse.urlencode(params)
-    return redirect(url)
-
-
-@app.route("/oauth2callback")
-def oauth2callback():
-    code = request.args.get("code")
-    error = request.args.get("error")
-
-    if error:
-        return f"OAuth error: {error}", 400
-    if not code:
-        return "Missing code", 400
-
-    token_url = "https://oauth2.googleapis.com/token"
-    data = {
-        "code": code,
-        "client_id": GOOGLE_CLIENT_ID,
-        "client_secret": GOOGLE_CLIENT_SECRET,
-        "redirect_uri": REDIRECT_URI,
-        "grant_type": "authorization_code",
-    }
-
-    resp = requests.post(token_url, data=data, timeout=10)
-    if resp.status_code != 200:
-        return f"Token exchange failed: {resp.status_code} {resp.text}", 400
-
-    tokens = resp.json()
-    # Penting: tokens["refresh_token"]
-    print("DEBUG GOOGLE TOKENS:", tokens, flush=True)
-
-    # TODO: simpan refresh_token ke DB/file yang aman
-    # sementara balikin ke browser dulu (nanti jangan di-production)
-    return jsonify({
-        "message": "OAuth success, tokens received",
-        "tokens": tokens,
-    })
 
 def sync_labs_from_schemes():
     """
@@ -122,51 +55,30 @@ def sync_labs_from_schemes():
     db_session.commit()
 
 def run_cleanup_actions(lab_id, username):
-    import re
-    import subprocess
-    
-    print(f"\n=== START CLEANUP DEBUG FOR {username} ===")
     scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
-    
+    if not os.path.exists(scheme_file):
+        return
+
     with open(scheme_file, "r") as f:
         scheme = json.load(f)
 
-    user = db_session.query(User).filter_by(username=username).first()
-    if not user:
-        print(f"DEBUG ERROR: User {username} tidak ada di database!")
-        return
 
-    # Pastikan suffix bersih
-    group = user.group_name.lower().strip().replace(" ", "")
-    kelas = user.class_name.lower().strip().replace(" ", "")
-    suffix = f"{group}-{kelas}"
-    
-    print(f"DEBUG: Suffix yang dibentuk -> '{suffix}'")
 
     for criterion in scheme.get("criteria", []):
-        if criterion.get("cleanup") is True:
-            ctype = criterion.get("type")
-            key = criterion.get("key")
-            
-            # Kita pakai replace manual yang lebih pasti untuk debug
-            # Karena di JSON kamu: cirros-cli-kelompokx-sijax
-            real_name = key.replace("kelompokx-sijax", suffix)
-            
-            print(f"DEBUG: Mencoba hapus {ctype} -> Nama Asli: {key} | Nama Target: {real_name}")
+        ctype = criterion.get("type")
+        key = criterion.get("key")
+        cleanup = criterion.get("cleanup")
 
-            if ctype == "instance":
-                # Jalankan perintah dan tangkap outputnya
-                cmd = ["/usr/bin/openstack", "server", "delete", real_name]
-                print(f"DEBUG: Menjalankan perintah -> {' '.join(cmd)}")
-                
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                
-                if result.returncode == 0:
-                    print(f"DEBUG SUCCESS: VM {real_name} berhasil dihapus atau sedang proses.")
-                else:
-                    print(f"DEBUG FAILED: Alasan gagal -> {result.stderr.strip()}")
+        if not cleanup:
+            continue
 
-    print("=== END CLEANUP DEBUG ===\n")
+        try:
+            if ctype == "user":
+                username = key
+                subprocess.run(["userdel", "-r", username], check=False)
+        except Exception as e:
+            print(f"Cleanup error for {lab_id} {ctype} {key}: {e}")
+
 
 @app.before_request
 def validate_content_type():
@@ -311,8 +223,11 @@ wib = pytz.timezone("Asia/Jakarta")
 @app.route('/grade-lab', methods=['POST'])
 def grade_lab():
     try:
+        # Ambil token dan body
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         data = request.get_json()
+        print("FULL DATA POSTED:", data)
+
         if not data:
             return jsonify({"error": "Invalid request data"}), 400
 
@@ -324,20 +239,35 @@ def grade_lab():
             username = token.split("-")[2]
         except:
             return jsonify({"error": "Invalid token"}), 401
-
-        # FIX 1: Gunakan satu nama variabel yang konsisten (user_info)
+            
         user_info = db_session.query(User).filter_by(username=username).first()
-        if not user_info: 
-            return jsonify({"error": "User not found"}), 404
-
-        # FIX 2: Definisikan suffix di awal sebelum loop kriteria
-        group = user_info.group_name.lower().strip().replace(" ", "")
-        kelas = user_info.class_name.lower().strip().replace(" ", "")
-        suffix = f"{group}-{kelas}"
+        if not user_info: return jsonify({"error": "User not found"}), 404
 
         lab_log_path = f"/var/log/gradingctl/labs/{lab_id}.log"
         os.makedirs(os.path.dirname(lab_log_path), exist_ok=True)
 
+        if not lab_id or not class_name:
+            return jsonify({"error": "lab_id and class_name are required"}), 400
+
+        # Ambil username dari token
+        #username = token.split("-")[2]
+        #print(f"Username: {username}, Class Name: {class_name}")
+
+        if not isinstance(client_data, dict):
+            return jsonify({"error": "Invalid client data format"}), 400
+
+        # Validasi / inisialisasi lab aktif
+        active_lab_map = ACTIVE_LABS.setdefault(token, {})
+        active_lab = active_lab_map.get(lab_id)
+        # Kalau belum ada / beda lab_id, inisialisasi baru
+        if active_lab is None:
+            active_lab = {
+#                "lab_id": lab_id,
+                "start_time": datetime.now(wib)
+            }
+            active_lab_map[lab_id] = active_lab
+
+        # Baca scheme
         scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
         if not os.path.exists(scheme_file):
             return jsonify({"error": "Lab not found"}), 404
@@ -422,13 +352,9 @@ def grade_lab():
                 if expected != str(actual_value):
                     failed = True
             elif ctype == "instance":
-                # FIX 3: Gunakan variabel suffix yang sudah dibuat di atas
-                real_vm_name = key.replace("kelompokx-sijax", suffix)
-                # Logika penilaian instance biasanya mengecek apakah sudah dihapus (untuk cleanup)
-                # atau apakah ada (untuk task awal). Sesuaikan dengan JSON kamu.
-                if str(actual_value) != str(expected):
+                # Jika expected-nya 'exists', maka cek apakah status dari client adalah 'exists'
+                if expected != str(actual_value):
                     failed = True
-
             elif ctype == "gitlab_runner":
                 ok, msg = check_gitlab_runner(
                     path_with_namespace=key,
@@ -561,29 +487,33 @@ def grade_lab():
 def finish_lab():
     try:
         auth_header = request.headers.get("Authorization")
-        token = auth_header.replace("Bearer ", "")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Invalid or missing Authorization header"}), 401
 
-        # FIX: Jangan cuma ambil dari ACTIVE_LABS karena kalau restart server datanya ilang
-        # Ambil username langsung dari token
-        try:
-            username = token.split("-")[2]
-        except:
-            return jsonify({"error": "Invalid token"}), 401
+        token = auth_header.split("Bearer ")[-1]
+        if not token:
+            return jsonify({"error": "Token is missing"}), 401
 
         data = request.get_json()
+        if not data or "lab_id" not in data:
+            return jsonify({"error": "Invalid request data"}), 400
+
         lab_id = data.get("lab_id")
 
-        if not lab_id:
-            return jsonify({"error": "lab_id is required"}), 400
-
-        # Jalankan cleanup
-        #run_cleanup_actions(lab_id, username)
-
-        # Bersihkan session jika ada
-        if token in ACTIVE_LABS:
+        # kalau masih tercatat aktif, hapus dari ACTIVE_LABS
+        active_lab = ACTIVE_LABS.get(token)
+        if active_lab and active_lab.get("lab_id") == lab_id:
             del ACTIVE_LABS[token]
 
-        return jsonify({"message": f"Lab {lab_id} finished successfully!"}), 200
+        # jalankan cleanup sesuai skema
+        run_cleanup_actions(lab_id)
+
+        # hapus log kalau ada
+        lab_log_path = f"/var/log/gradingctl/labs/{lab_id}.log"
+        if os.path.exists(lab_log_path):
+            os.remove(lab_log_path)
+
+        return jsonify({"message": f"Lab '{lab_id}' finished successfully"}), 200
 
     except Exception as e:
         print(f"Error in finish_lab: {str(e)}")
@@ -933,7 +863,7 @@ def scheme_editor():
 
 @app.route('/create_scheme', methods=['GET', 'POST'])
 def create_scheme():
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "instance", "grafana_alert_rule", "grafana_alert_firing", "gmail_alert_email" ]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "instance" ]
     expected = {
         "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
@@ -948,9 +878,6 @@ def create_scheme():
         "gitlab_project": ["exists"],
         "gitlab_runner": ["exists"],
         "image": ["exists"],
-        "grafana_alert_rule": ["exists"],
-        "grafana_alert_firing": ["exists"],
-        "gmail_alert_email": ["exists"],
         "instance": ["deleted"]
     }
 
@@ -1059,7 +986,8 @@ def edit_scheme_page(lab_id):
     with open(scheme_file, "r") as f:
         scheme = json.load(f)
 
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "grafana_alert_rule", "gmail_alert_email", "instance"]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "instance" ]
+
     expected = {
         "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
@@ -1074,9 +1002,6 @@ def edit_scheme_page(lab_id):
         "gitlab_project": ["exists"],
         "gitlab_runner": ["exists"],
         "image": ["exists"],
-        "grafana_alert_rule": ["exists"],
-        "grafana_alert_firing": ["exists"],
-        "gmail_alert_email": ["exists"],
         "instance": ["deleted"]
     }
 
@@ -1185,7 +1110,7 @@ def home():
 
 @app.route('/add_scheme')
 def add_scheme():
-    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "instance", "grafana_alert_rule", "grafana_alert_firing", "gmail_alert_email" ]
+    types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "instance" ]
     expected = {
         "command": ["true", "false"],
         "file_exists": ["exists", "deleted"],
@@ -1200,9 +1125,6 @@ def add_scheme():
         "gitlab_project": ["exists"],
         "gitlab_runner": ["exists"],
         "image": ["exists"],
-        "grafana_alert_rule": ["exists"],
-        "grafana_alert_firing": ["exists"],
-        "gmail_alert_email": ["exists"],
         "instance": ["deleted"]
     }
 

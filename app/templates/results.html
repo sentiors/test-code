@@ -109,10 +109,25 @@
             margin: 0 10px;
             font-size: 16px;
         }
+        .top-link {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .top-link a {
+            font-size: 14px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .top-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="top-link">
+            <a href="/">← Back to Scheme List</a>
+        </div>
         <h1>Grading Results</h1>
         <form class="filter-form" method="GET" action="/results">
             <select name="class_name" id="class_name">
@@ -140,14 +155,14 @@
         <table>
             <thead>
                 <tr>
-                    <th>Nama</th>
-                    <th>Kelas</th>
-                    <th>Kelompok</th>
-                    <th>Lab ID</th>
-                    <th>Score</th>
-                    <th>Timestamp</th>
-                    <th>Duration</th>
-                    <th>Status</th>
+                    <th style="text-align: center;">Nama</th>
+                    <th style="text-align: center;">Kelas</th>
+                    <th style="text-align: center;">Kelompok</th>
+                    <th style="text-align: center;">Lab ID</th>
+                    <th style="text-align: center;">Score</th>
+                    <th style="text-align: center;">Timestamp</th>
+                    <th style="text-align: center;">Duration</th>
+                    {#<th>Status</th>#}
                     <th>Action</th>
                 </tr>
             </thead>
@@ -155,22 +170,22 @@
                 {% for result in results %}
                     <tr>
                         <td>{{ users | selectattr('username', 'equalto', result.username) | map(attribute='name') | first }}</td>
-                        <td>{{ result.class_name }}</td>
-                        <td>{{ users | selectattr('username', 'equalto', result.username) | map(attribute='group_name') | first }}</td>
+                        <td style="text-align: center;">{{ result.class_name }}</td>
+                        <td style="text-align: center;">{{ users | selectattr('username', 'equalto', result.username) | map(attribute='group_name') | first }}</td>
                         <td>{{ result.lab_id }}</td>
-                        <td>{{ result.score }}</td>
-                        <td>{{ result.local_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-			<td>
+                        <td style="text-align: center;">{{ result.score }}</td>
+                        <td style="text-align: center;">{{ result.local_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+			<td style="text-align: center;">
 			    {{ ((result.duration or 0) // 60)|int }} mins
 			</td>
 
-                        <td>
+                        {#<td>
                             {% if result.status == "done" %}
                                 <span style="color: green;">Done</span>
                             {% else %}
                                 <span style="color: orange;">Ongoing</span>
                             {% endif %}
-                        </td>
+                        </td>#}
                         <td>
                             <button class="btn-delete" onclick="deleteResult({{ result.id }})">Delete</button>
                         </td>
@@ -228,28 +243,46 @@
                 labSelect.appendChild(option);
             });
 
-	    // --- ISI DROPDOWN KELOMPOK (group_name) ---
-	    const groupSelect = document.getElementById('group_name');
-	    const groupMap = new Map();
+// --- ISI DROPDOWN KELOMPOK (HANYA 1-9) ---
+	const groupSelect = document.getElementById('group_name');
+	const groupMap = new Map();
 
-	    data.users.forEach(user => {
-	        const gName = (user.group_name || '').trim();
-	        if (!gName) return;
-	        if (!groupMap.has(gName.toLowerCase())) {
-	            groupMap.set(gName.toLowerCase(), gName);
-	        }
-	    });
+	data.users.forEach(user => {
+		let gName = (user.group_name || '').trim();
+		if (!gName) return;
 
-	    groupMap.forEach((displayName) => {
-	        const option = document.createElement('option');
-	        option.value = displayName;
-	        option.textContent = displayName;
-	        // Tandai sebagai selected jika sedang memfilter kelompok ini
-	        if ("{{ group_name or '' }}" === displayName) {
-	            option.selected = true;
-	        }
-	        groupSelect.appendChild(option);
-	    });
+		// Ambil hanya karakter angka dari string (misal "Kelompok 1" jadi "1")
+		let onlyNumber = gName.replace(/\D/g, '');
+		let groupNum = parseInt(onlyNumber);
+
+		// Filter ketat: Hanya masukkan jika itu angka 1 sampai 9
+		if (groupNum >= 1 && groupNum <= 9) {
+			let realValue = groupNum.toString();
+			let displayValue = "Kelompok " + groupNum;
+
+			if (!groupMap.has(realValue)) {
+				groupMap.set(realValue, {
+					realValue: realValue,
+					text: displayValue,
+					num: groupNum
+				});
+			}
+		}
+	});
+
+	// Urutkan berdasarkan angka (1, 2, 3...)
+	const sortedGroups = Array.from(groupMap.values()).sort((a, b) => a.num - b.num);
+
+	sortedGroups.forEach((group) => {
+		const option = document.createElement('option');
+		option.value = group.realValue; // Mengirim angka ke server (misal "1")
+		option.textContent = group.text; // Tampilan di web "Kelompok 1"
+		
+		if ("{{ group_name or '' }}" === group.realValue) {
+			option.selected = true;
+		}
+		groupSelect.appendChild(option);
+	});
 
             // NEW: dropdown user by NAME (unik)
             const userSelect = document.getElementById('search_name');
@@ -262,7 +295,9 @@
                 if (!userMap.has(key)) userMap.set(key, displayName);
             });
 
-            userMap.forEach((displayName, key) => {
+            const sortedNames = Array.from(userMap.values()).sort((a, b) => a.localeCompare(b));
+
+            sortedNames.forEach((displayName) => {
                 const option = document.createElement('option');
                 option.value = displayName;       // kirim nama ke backend
                 option.textContent = displayName; // tampil di dropdown
