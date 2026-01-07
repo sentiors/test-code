@@ -104,11 +104,11 @@ def validate_input(email, phone):
     # Validasi email harus diakhiri @gmail.com
     if not re.match(r"^[a-zA-Z0-9._%+-]+@gmail\.com$", email):
         return "Email harus menggunakan domain @gmail.com"
-
+    
     # Validasi nomor telepon harus dimulai dengan 62 dan hanya angka
     if not re.match(r"^62[0-9]+$", phone):
         return "Nomor telepon harus dimulai dengan 62 (contoh: 62812...)"
-
+    
     return None
 
 def sync_labs_from_schemes():
@@ -135,10 +135,10 @@ def sync_labs_from_schemes():
 def run_cleanup_actions(lab_id, username):
     import re
     import subprocess
-
+    
     print(f"\n=== START CLEANUP DEBUG FOR {username} ===")
     scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
-
+    
     with open(scheme_file, "r") as f:
         scheme = json.load(f)
 
@@ -151,27 +151,27 @@ def run_cleanup_actions(lab_id, username):
     group = user.group_name.lower().strip().replace(" ", "")
     kelas = user.class_name.lower().strip().replace(" ", "")
     suffix = f"{group}-{kelas}"
-
+    
     print(f"DEBUG: Suffix yang dibentuk -> '{suffix}'")
 
     for criterion in scheme.get("criteria", []):
         if criterion.get("cleanup") is True:
             ctype = criterion.get("type")
             key = criterion.get("key")
-
+            
             # Kita pakai replace manual yang lebih pasti untuk debug
             # Karena di JSON kamu: cirros-cli-kelompokx-sijax
             real_name = key.replace("kelompokx-sijax", suffix)
-
+            
             print(f"DEBUG: Mencoba hapus {ctype} -> Nama Asli: {key} | Nama Target: {real_name}")
 
             if ctype == "instance":
                 # Jalankan perintah dan tangkap outputnya
                 cmd = ["/usr/bin/openstack", "server", "delete", real_name]
                 print(f"DEBUG: Menjalankan perintah -> {' '.join(cmd)}")
-
+                
                 result = subprocess.run(cmd, capture_output=True, text=True)
-
+                
                 if result.returncode == 0:
                     print(f"DEBUG SUCCESS: VM {real_name} berhasil dihapus atau sedang proses.")
                 else:
@@ -188,7 +188,7 @@ def create_node():
     node_type = data.get('type') # 'file' atau 'folder'
     if not name:
         return jsonify({"success": False, "error": "Nama tidak boleh kosong"})
-
+    
     target_path = os.path.join("/opt/grading", name)
     try:
         if node_type == 'file':
@@ -208,7 +208,7 @@ def list_files():
     files_data = []
     # Kita scan dari folder root project
     root_dir = "/opt/grading"
-
+    
     # Daftar folder yang ingin kita ikutkan dalam list
     allowed_folders = ['app', 'schemes', 'templates']
     # Daftar ekstensi yang boleh diedit
@@ -218,14 +218,14 @@ def list_files():
         # Abaikan folder sampah agar tidak berat
         if any(x in root for x in ["__pycache__", ".git", "logs", "case"]):
             continue
-
+            
         for name in files:
             # Saring: Hanya ambil file script dan abaikan file backup (.save / .backup)
             if name.endswith(allowed_extensions) and not any(x in name for x in [".save", ".backup", ".tmp", "pyc"]):
                 # Ambil path relatif dari /opt/grading
                 rel_path = os.path.relpath(os.path.join(root, name), root_dir)
                 files_data.append(rel_path)
-
+    
     return jsonify(sorted(files_data))
 
 @app.route('/get-file-content')
@@ -305,7 +305,7 @@ def reset_password():
     new_password = data.get('new_password')
 
     user = db_session.query(User).filter(User.username == username).first()
-
+    
     if not user:
         return jsonify({"error": "Username tidak ditemukan"}), 404
 
@@ -338,7 +338,7 @@ def login():
             return jsonify({"error": "Password salah!"}), 401
 
         # Buat token (contoh sederhana)
-        token = f"dummy-token-kelompok{user.group_name}-{user.class_name}-{username}"
+        token = f"dummy-token-{username}-{user.class_name}"
         return jsonify({"token": token, "class_name": user.class_name}), 200
 
     except Exception as e:
@@ -350,20 +350,16 @@ def start_lab():
     try:
         auth_header = request.headers.get("Authorization", "")
         token = auth_header.replace("Bearer ", "")
-
+        
         # FIX 1: Ambil username dari token dulu!
-        username = token.split("-")[-1]
-
+        username = token.split("-")[2]
+        
         # FIX 2: Cari user dulu buat dapet group_name
         user = db_session.query(User).filter_by(username=username).first()
         if not user: return jsonify({"error": "User tidak ditemukan"}), 404
 
         data = request.get_json()
         lab_id = data.get("lab_id")
-
-        lab_exists = db_session.query(Lab).filter_by(lab_id=lab_id).first()
-        if not lab_exists:
-            return jsonify({"error": f"Lab '{lab_id}' tidak terdaftar dalam sistem!"}), 404
 
         # Shared Timer Logic
         session = db_session.query(LabSession).filter_by(group_name=user.group_name, lab_id=lab_id).first()
@@ -391,11 +387,13 @@ def get_scheme_description():
 
     with open(scheme_file, 'r') as f:
         scheme = json.load(f)
+    grading_mode = scheme.get("grading_mode", "group_shared")
 
     # Format deskripsi skema
     description = {
         "lab_id": lab_id,
         "description": scheme.get("description", "No description available"),
+        "grading_mode": grading_mode, # <--- Tambahkan ini
         "criteria": [
             {
                 "type": criterion.get("type"),
@@ -438,18 +436,14 @@ def grade_lab():
         client_data = data.get("client_data", {})
 
         try:
-            username = token.split("-")[-1]
+            username = token.split("-")[2]
         except:
             return jsonify({"error": "Token tidak valid"}), 401
 
         # FIX 1: Gunakan satu nama variabel yang konsisten (user_info)
         user_info = db_session.query(User).filter_by(username=username).first()
-        if not user_info:
+        if not user_info: 
             return jsonify({"error": "User tidak ditemukan"}), 404
-
-        lab_obj = db_session.query(Lab).filter_by(lab_id=lab_id).first()
-        # Mengutamakan default 'kelompok'
-        grading_type = getattr(lab_obj, 'grading_type', 'kelompok')
 
         # FIX 2: Definisikan suffix di awal sebelum loop kriteria
         group = user_info.group_name.lower().strip().replace(" ", "")
@@ -484,21 +478,21 @@ def grade_lab():
             if ctype in ["gitlab_project", "gitlab_pipeline"]:
                 # Pastikan menggunakan variabel 'username' yang sudah didefinisikan di atas
                 user = db_session.query(User).filter_by(username=username).first()
-
+                
                 if user:
                     import re
                     # Ambil angka dari "Grup 1" dan "10_sija1"
                     g_match = re.findall(r'\d+', user.group_name)
                     c_match = re.findall(r'\d+', user.class_name)
-
+                    
                     if g_match and c_match:
                         suffix = f"kelompok{g_match[0]}-sija{c_match[0]}"
                         # Buat key dinamis (kelompok1-sija1/...)
                         dynamic_key = key.replace("kelompokx-sijax", suffix)
-
+                        
                         # Ambil ID Project dari GitLab
                         project_id, err_msg = get_gitlab_project_id(dynamic_key)
-
+                        
                         if project_id:
                             if ctype == "gitlab_pipeline":
                                 # Case 1: Cek Pipeline
@@ -584,10 +578,6 @@ def grade_lab():
                         f"[{datetime.now(wib)}] CASE: {description} | ERROR: {msg}\n"
                     )
 
-        # Kalau ada minimal 1 failed, nilai 0
-        #if any("Failed" in f for f in feedback_failed):
-        #    total_score = 0
-
         # Gabungkan: gagal dulu, lalu yang sukses
         all_feedback = feedback_failed + feedback_success
 
@@ -596,74 +586,107 @@ def grade_lab():
         print("DEBUG all_feedback:", all_feedback)
         print(f"Total score calculated: {total_score}")
 
-        duration = 0
-        penalty_messages = []
-        
-        session = db_session.query(LabSession).filter_by(group_name=user_info.group_name, lab_id=lab_id).first()
-        if session:
-            end_time = datetime.now(wib)
-            duration = (end_time - session.first_start.replace(tzinfo=wib)).total_seconds()
-            session.last_activity = end_time
-            session.total_duration = duration
+# ========= VARIABEL PENALTY (FIX DI SINI) =========
+        score_awal = total_score  # Simpan score sebelum dipotong penalty
+        penalty_messages = []     # <--- INISIALISASI LIST AGAR TIDAK ERROR
+        duration_seconds = 0
+        duration_hours = 0
 
-        # Cek apakah ada yang sudah dapat 100 di kelas ini
-        is_first = db_session.query(GradingResult).filter_by(lab_id=lab_id, class_name=user_info.class_name, score=100).count() == 0
-        
-        # Pinalti Waktu (3% per 3 menit)
-        max_duration = 180 
-        if total_score > 0 and duration > max_duration:
-            if is_first:
-                penalty_messages.append("Bonus Pioneer: Pinalti diringankan karena solver yang pertama.")
-                total_score = max(total_score, 95)
+# ========= HITUNG DURASI & PENALTY WAKTU (3 JAM = -5 POIN) =========
+        try:
+            session = db_session.query(LabSession).filter_by(group_name=group, lab_id=lab_id).first()
+            if session:
+                end_time = datetime.now(wib)
+                duration_seconds = (end_time - session.first_start.replace(tzinfo=wib)).total_seconds()
+                session.last_activity = end_time
+                session.total_duration = duration_seconds
+                db_session.commit()
+                duration_hours = duration_seconds / 3600
             else:
-                n_penalty = int((duration - max_duration) // max_duration) + 1
-                penalty_total = n_penalty * 3
-                total_score = max(80, total_score * (100 - penalty_total) / 100)
-                penalty_messages.append(f"Pinalti waktu: -{penalty_total}%")
+                print("No LabSession found, skipping duration penalty")
 
-        # Anti-Nyontek (Batas 80)
-        if not is_first and duration < 60 and total_score > 90:
-            total_score = 80 
-            penalty_messages.append("Indikasi kecurangan: Nilai dibatasi ke 80.")
+            max_duration_hours = 3  # Batas awal 3 jam
+            if total_score > 0 and duration_hours > max_duration_hours:
+                n_penalty = int((duration_hours - max_duration_hours) // 3) + 1
+                penalty_points = n_penalty * 5
+                total_score -= penalty_points
+                penalty_messages.append(f"Penalty Waktu: Terlambat {round(duration_hours, 1)} jam, pengurangan {penalty_points} poin (-5 per 3 jam)")
+        except Exception as e:
+            print(f"Duration Error: {e}")
 
-        # 5. Simpan Hasil (Prioritas Kelompok)
-        def save_to_db(target_user):
-            existing_res = db_session.query(GradingResult).filter_by(username=target_user, lab_id=lab_id).first()
-            if existing_res:
-                existing_res.score = total_score
-                existing_res.feedback = ", ".join(all_feedback)
-                existing_res.duration = duration
-                existing_res.timestamp = datetime.now(wib)
+        # ========= PENALTY URUTAN & MODE GRADING (VERSI DISKON) =========
+        grading_mode = scheme.get("grading_mode", "group_shared")
+
+        # 1. Penalty Urutan Kelas (-2 jika bukan yang pertama lulus di kelas)
+        # Biar ada persaingan sehat antar kelompok tapi nggak ngerusak nilai
+        is_class_first = db_session.query(GradingResult).filter_by(lab_id=lab_id, status="done").first()
+        if is_class_first:
+            total_score -= 2
+            penalty_messages.append("Penalty")
+
+        # 2. Logika Pengekor (-3 jika mode individu dan temen sekelompok udah lulus duluan)
+        # Biar mereka nggak cuma nunggu temennya kelar baru copas
+        if grading_mode == "individual_in_group":
+            is_group_first = db_session.query(GradingResult).filter_by(
+                lab_id=lab_id, 
+                group_name=group, 
+                status="done"
+            ).first()
+            
+            if is_group_first:
+                total_score -= 3
+                penalty_messages.append("Penalty")
+
+        # 3. Batas Bawah 80 (Safety Net)
+        # Selama kerjaan secara teknis bener (score_awal >= 100), nilai gak bakal drop di bawah 80
+        if score_awal >= 100 and total_score < 80:
+            total_score = 80
+        elif total_score < 0:
+            total_score = 0
+
+        # ========= SIMPAN HASIL KE DATABASE =========
+        try:
+            if grading_mode == "group_shared":
+                users_to_grade = db_session.query(User).filter_by(class_name=class_name, group_name=group).all()
             else:
-                res = GradingResult(
-                    username=target_user,
-                    class_name=user_info.class_name,
-                    lab_id=lab_id,
-                    score=total_score,
-                    feedback=", ".join(all_feedback),
-                    duration=duration,
-                    status="done",
-                    timestamp=datetime.now(wib)
-                )
-                db_session.add(res)
+                users_to_grade = [user_info]
 
-        if grading_type == "kelompok":
-            # Update semua anggota kelompok
-            group_users = db_session.query(User).filter_by(class_name=user_info.class_name, group_name=user_info.group_name).all()
-            for g_user in group_users:
-                save_to_db(g_user.username)
-        else:
-            # Individu / Individu per kelompok
-            save_to_db(username)
+            for g_user in users_to_grade:
+                existing = db_session.query(GradingResult).filter_by(username=g_user.username, lab_id=lab_id).first()
 
-        db_session.commit()
+                if existing:
+                    if total_score > existing.score:
+                        existing.score = round(total_score, 2)
+                        existing.feedback = ", ".join(all_feedback)
+                        existing.duration = duration_seconds
+                        existing.timestamp = datetime.now(wib)
+                        existing.status = "done"
+                        print(f"Updating higher score for {g_user.username}")
+                else:
+                    res = GradingResult(
+                        username=g_user.username,
+                        class_name=class_name,
+                        lab_id=lab_id,
+                        score=round(total_score, 2),
+                        feedback=", ".join(all_feedback),
+                        duration=duration_seconds,
+                        status="done",
+                        timestamp=datetime.now(wib)
+                    )
+                    db_session.add(res)
+
+            db_session.commit()
+            print("Database committed successfully")
+        except Exception as db_e:
+            db_session.rollback()
+            print(f"DB Save Error: {db_e}")
 
         return jsonify({
-            "score": total_score if total_score is not None else 0,
-            "feedback": all_feedback if isinstance(all_feedback, list) else [],
-            "log_path": lab_log_path,
-            "duration": duration if duration is not None else 0,
-            "penalty": penalty_messages
+            "score": round(total_score, 2),
+            "feedback": all_feedback,
+            "duration_hours": round(duration_hours, 2) if 'duration_hours' in locals() else 0,
+            "penalty": penalty_messages,
+            "mode": grading_mode
         }), 200
 
     except json.JSONDecodeError as e:
@@ -682,7 +705,7 @@ def finish_lab():
         # FIX: Jangan cuma ambil dari ACTIVE_LABS karena kalau restart server datanya ilang
         # Ambil username langsung dari token
         try:
-            username = token.split("-")[-1]
+            username = token.split("-")[2]
         except:
             return jsonify({"error": "Token tidak valid"}), 401
 
@@ -700,14 +723,6 @@ def finish_lab():
             del ACTIVE_LABS[token]
 
         return jsonify({"message": f"Lab {lab_id} selesai!"}), 200
-
-        session = db_session.query(LabSession).filter_by(
-            group_name=user.group_name, 
-            lab_id=lab_id
-        ).first()
-
-        if not session:
-            return jsonify({"error": "Gagal! Anda belum memulai (start) lab ini!"}), 400
 
     except Exception as e:
         print(f"Error in finish_lab: {str(e)}")
@@ -900,7 +915,7 @@ def show_results():
 
             # 3. Logika Filter Angka 1-9 untuk tampilan
             only_number = "".join(filter(str.isdigit, gName))
-
+		
             if only_number and 1 <= int(only_number) <= 9:
                     result.display_group = f"Kelompok {only_number}"
             else:
@@ -973,7 +988,7 @@ def download_results():
         writer = csv.writer(output)
 
         # Tulis header CSV
-        writer.writerow(['Username', 'Nama', 'Kelas', 'Kelompok', 'Lab ID', 'Score', 'Timestamp'])
+        writer.writerow(['Username', 'Nama', 'Kelas', 'Kelompok', 'Lab ID', 'Score', 'Feedback', 'Timestamp'])
 
         # Tulis data ke CSV
         for result in final_results:
@@ -985,7 +1000,7 @@ def download_results():
                 user.group_name if user else '',
                 result.lab_id,
                 result.score,
-             #   result.feedback,
+                result.feedback,
                 result.timestamp.strftime('%Y-%m-%d %H:%M:%S')
             ])
 
@@ -1088,8 +1103,8 @@ def create_scheme():
             return jsonify({"error": "Data permintaan tidak valid"}), 400
 
         lab_id = data.get("lab_id")
+        mode = data.get("grading_mode", "group_shared")  # ← **TAMBAH INI**
         criteria = data.get("criteria")
-        grading_type = data.get("grading_type", "kelompok")
 
         # Validasi kriteria
         if not isinstance(criteria, list) or len(criteria) == 0:
@@ -1106,7 +1121,7 @@ def create_scheme():
         # Buat skema baru
         scheme = {
             "lab_id": lab_id,
-            "grading_type": grading_type,
+            "grading_mode": mode, # <--- Tambahkan ini
             "criteria": criteria
         }
 
@@ -1115,12 +1130,21 @@ def create_scheme():
         with open(scheme_file, 'w') as f:
             json.dump(scheme, f, indent=4)
 
-        # Tambahkan lab ke database jika belum ada
         existing_lab = db_session.query(Lab).filter(Lab.lab_id == lab_id).first()
-        if not existing_lab:
-            new_lab = Lab(lab_id=lab_id, scheme_path=scheme_file, grading_type=grading_type)
+        if existing_lab:
+            existing_lab.grading_mode = mode  # ← UPDATE MODE
+            existing_lab.scheme_path = scheme_file  # ← UPDATE PATH JUGA
+        else:
+            new_lab = Lab(lab_id=lab_id, scheme_path=scheme_file, grading_mode=mode)
             db_session.add(new_lab)
             db_session.commit()
+
+        # Tambahkan lab ke database jika belum ada
+#        existing_lab = db_session.query(Lab).filter(Lab.lab_id == lab_id).first()
+#        if not existing_lab:
+#            new_lab = Lab(lab_id=lab_id, scheme_path=scheme_file)
+#            db_session.add(new_lab)
+#            db_session.commit()
 
         return jsonify({"message": f"Skema '{lab_id}' berhasil dibuat!"}), 200
 
@@ -1138,8 +1162,8 @@ def edit_scheme():
             return jsonify({"error": "Data permintaan tidak valid"}), 400
 
         lab_id = data.get("lab_id")
+        mode = data.get("grading_mode", "group_shared")  # ← **TAMBAH INI**
         criteria = data.get("criteria")
-        grading_type = data.get("grading_type", "kelompok") # Tangkap tipe grading
 
         # Hitung skor otomatis
         num_criteria = len(criteria)
@@ -1155,9 +1179,8 @@ def edit_scheme():
         # Buat skema baru
         scheme = {
             "lab_id": lab_id,
-            "grading_type": grading_type,
+            "grading_mode": mode, # <--- Tambahkan ini
             "criteria": criteria
-
         }
 
         # Simpan skema ke file
@@ -1168,8 +1191,11 @@ def edit_scheme():
         # Tambahkan lab ke database jika belum ada
         existing_lab = db_session.query(Lab).filter(Lab.lab_id == lab_id).first()
         if existing_lab:
-            existing_lab.scheme_path = scheme_file
-            existing_lab.grading_type = grading_type # Update tipe grading di DB
+            existing_lab.grading_mode = mode  # ← UPDATE MODE
+            existing_lab.scheme_path = scheme_file  # ← UPDATE PATH JUGA
+        else:
+            new_lab = Lab(lab_id=lab_id, scheme_path=scheme_file, grading_mode=mode)
+            db_session.add(new_lab)
             db_session.commit()
 
         return jsonify({"message": f"Skema '{lab_id}' berhasil diupdate!"}), 200
@@ -1216,11 +1242,10 @@ def edit_scheme_post(lab_id):
     try:
         data = request.get_json()
         criteria = data.get("criteria")
-        grading_type = data.get("grading_type", "kelompok") # Tangkap tipe grading
         # Jika perlu, bisa compare lab_id dari data dan URL, tapi biasanya cukup dari URL
         scheme = {
             "lab_id": lab_id,
-            "grading_type": grading_type,
+            "grading_mode": mode, # <--- Tambahkan ini
             "criteria": criteria
         }
         scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
@@ -1398,18 +1423,18 @@ def migrate_classes():
     try:
         # 1. Ambil semua class_name unik dari tabel User
         existing_classes = db_session.query(User.class_name).distinct().all()
-
+        
         for (c_name,) in existing_classes:
             if c_name:
                 # 2. Cek apakah kelas sudah ada di tabel Class agar tidak duplikat
                 exists = db_session.query(Class).filter_by(class_name=c_name).first()
-
+                
                 if not exists:
                     # 3. Masukkan ke tabel Class jika belum ada
                     new_class = Class(class_name=c_name)
                     db_session.add(new_class)
                     print(f"Migrating class: {c_name}")
-
+        
         db_session.commit()
         print("Migration Class selesai!")
     except Exception as e:
@@ -1421,7 +1446,7 @@ def admin_page():
     try:
         # Jalankan migrasi agar data dari tabel User masuk ke tabel Class & Group
         migrate_groups()
-        migrate_classes()
+        migrate_classes() 
 
         # --- LOGIKA PAGINATION ---
         page = request.args.get('page', 1, type=int)
@@ -1431,12 +1456,12 @@ def admin_page():
         # Ambil filter dari URL
         class_filter = request.args.get('class_name', '')
         group_filter = request.args.get('group_name', '')
-
+        
         # Query dasar untuk User
         query = db_session.query(User)
-        if class_filter:
+        if class_filter: 
             query = query.filter(User.class_name == class_filter)
-        if group_filter:
+        if group_filter: 
             query = query.filter(User.group_name == group_filter)
 
         # Hitung total data & total halaman

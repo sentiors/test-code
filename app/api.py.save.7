@@ -20,7 +20,7 @@ from .utils_grafana import (
 )
 from .utils_gmail import check_alert_email_sent_any
 from .database import db_session, init_db
-from .models import User, Lab, GradingResult, LabSession, Group, Class
+from .models import User, Lab, GradingResult, LabSession
 from datetime import datetime
 import pytz
 wib = pytz.timezone("Asia/Jakarta")
@@ -100,16 +100,7 @@ def oauth2callback():
         "tokens": tokens,
     })
 
-def validate_input(email, phone):
-    # Validasi email harus diakhiri @gmail.com
-    if not re.match(r"^[a-zA-Z0-9._%+-]+@gmail\.com$", email):
-        return "Email harus menggunakan domain @gmail.com"
 
-    # Validasi nomor telepon harus dimulai dengan 62 dan hanya angka
-    if not re.match(r"^62[0-9]+$", phone):
-        return "Nomor telepon harus dimulai dengan 62 (contoh: 62812...)"
-
-    return None
 
 def sync_labs_from_schemes():
     """
@@ -135,10 +126,10 @@ def sync_labs_from_schemes():
 def run_cleanup_actions(lab_id, username):
     import re
     import subprocess
-
+    
     print(f"\n=== START CLEANUP DEBUG FOR {username} ===")
     scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
-
+    
     with open(scheme_file, "r") as f:
         scheme = json.load(f)
 
@@ -151,27 +142,27 @@ def run_cleanup_actions(lab_id, username):
     group = user.group_name.lower().strip().replace(" ", "")
     kelas = user.class_name.lower().strip().replace(" ", "")
     suffix = f"{group}-{kelas}"
-
+    
     print(f"DEBUG: Suffix yang dibentuk -> '{suffix}'")
 
     for criterion in scheme.get("criteria", []):
         if criterion.get("cleanup") is True:
             ctype = criterion.get("type")
             key = criterion.get("key")
-
+            
             # Kita pakai replace manual yang lebih pasti untuk debug
             # Karena di JSON kamu: cirros-cli-kelompokx-sijax
             real_name = key.replace("kelompokx-sijax", suffix)
-
+            
             print(f"DEBUG: Mencoba hapus {ctype} -> Nama Asli: {key} | Nama Target: {real_name}")
 
             if ctype == "instance":
                 # Jalankan perintah dan tangkap outputnya
                 cmd = ["/usr/bin/openstack", "server", "delete", real_name]
                 print(f"DEBUG: Menjalankan perintah -> {' '.join(cmd)}")
-
+                
                 result = subprocess.run(cmd, capture_output=True, text=True)
-
+                
                 if result.returncode == 0:
                     print(f"DEBUG SUCCESS: VM {real_name} berhasil dihapus atau sedang proses.")
                 else:
@@ -179,143 +170,41 @@ def run_cleanup_actions(lab_id, username):
 
     print("=== END CLEANUP DEBUG ===\n")
 
-BASE_DIR = "/opt/grading"
-
-@app.route('/create-node', methods=['POST'])
-def create_node():
-    data = request.json
-    name = data.get('name')
-    node_type = data.get('type') # 'file' atau 'folder'
-    if not name:
-        return jsonify({"success": False, "error": "Nama tidak boleh kosong"})
-
-    target_path = os.path.join("/opt/grading", name)
-    try:
-        if node_type == 'file':
-            if not os.path.exists(target_path):
-                with open(target_path, 'w') as f:
-                    f.write("")
-            else:
-                return jsonify({"success": False, "error": "File sudah ada"})
-        else:
-            os.makedirs(target_path, exist_ok=True)
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/list-files')
-def list_files():
-    files_data = []
-    # Kita scan dari folder root project
-    root_dir = "/opt/grading"
-
-    # Daftar folder yang ingin kita ikutkan dalam list
-    allowed_folders = ['app', 'schemes', 'templates']
-    # Daftar ekstensi yang boleh diedit
-    allowed_extensions = ('.py', '.html', '.json', '.js', '.css', '.txt', '.yml')
-
-    for root, dirs, files in os.walk(root_dir):
-        # Abaikan folder sampah agar tidak berat
-        if any(x in root for x in ["__pycache__", ".git", "logs", "case"]):
-            continue
-
-        for name in files:
-            # Saring: Hanya ambil file script dan abaikan file backup (.save / .backup)
-            if name.endswith(allowed_extensions) and not any(x in name for x in [".save", ".backup", ".tmp", "pyc"]):
-                # Ambil path relatif dari /opt/grading
-                rel_path = os.path.relpath(os.path.join(root, name), root_dir)
-                files_data.append(rel_path)
-
-    return jsonify(sorted(files_data))
-
-@app.route('/get-file-content')
-def get_file_content():
-    path = request.args.get('path')
-    full_path = os.path.join(BASE_DIR, path)
-    if os.path.exists(full_path):
-        with open(full_path, 'r') as f:
-            return jsonify({"content": f.read()})
-    return jsonify({"error": "File not found"}), 404
-
-@app.route('/save-file-content', methods=['POST'])
-def save_file_content():
-    data = request.json
-    full_path = os.path.join(BASE_DIR, data['path'])
-    try:
-        with open(full_path, 'w') as f:
-            f.write(data['content'])
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
 @app.before_request
 def validate_content_type():
     if request.method == 'POST' and not request.is_json:
-        return jsonify({"error": "Content-Type harus berupa application/json"}), 415
+        return jsonify({"error": "Content-Type must be application/json"}), 415
 
 @app.route('/register', methods=['POST'])
 def register():
     try:
         data = request.json
-        # Ambil data dan bersihkan dari spasi liar serta paksa huruf kecil untuk email
-        name = data.get('name', '').strip()
-        email = data.get('email', '').strip().lower()
-        phone = data.get('phone', '').strip()
-        username = data.get('username', '').strip()
-        password = data.get('password', '')
-        classname = data.get('class_name', '').strip()
-        groupname = data.get('group_name', '').strip()
+        name = data.get("name")
+        group_name = data.get("group_name")
+        username = data.get("username")
+        password = data.get("password")
+        class_name = data.get("class_name")
 
-        # Validasi Email (harus @gmail.com dan sudah di-strip)
-        if not re.match(r"^[a-z0-9._%+-]+@gmail\.com$", email):
-            return jsonify({"error": f"Email '{email}' tidak valid! Pastikan menggunakan @gmail.com tanpa spasi."}), 400
+        # Validasi input
+        if not username or not password or not name or not class_name or not group_name:
+            return jsonify({"error": "Username, password, name, class_name, and group_name are required"}), 400
 
-        # Validasi Phone (harus mulai 62)
-        if not re.match(r"^62[0-9]+$", phone):
-            return jsonify({"error": "Nomor telepon harus dimulai dengan 62 dan hanya angka!"}), 400
+        # Cek apakah username sudah ada
+        existing_user = db_session.query(User).filter(User.username == username).first()
+        if existing_user:
+            return jsonify({"error": "Username already exists"}), 400
 
-        # Cek Username apakah sudah ada
-        exists = db_session.query(User).filter_by(username=username).first()
-        if exists:
-            return jsonify({"error": f"Username '{username}' sudah digunakan!"}), 400
-
-        # Simpan ke DB
-        new_user = User(
-            username=username,
-            password=password,
-            name=name,
-            email=email,
-            phone=phone,
-            class_name=classname,
-            group_name=groupname
-        )
+        # Buat user baru
+        new_user = User(name=name, group_name=group_name, username=username, password=password, class_name=class_name)
         db_session.add(new_user)
         db_session.commit()
-        return jsonify({"message": "Registrasi berhasil!"}), 201
+
+        return jsonify({"message": "User registered successfully"}), 201
 
     except Exception as e:
+        print(f"Error in register: {str(e)}")  # Debugging
         db_session.rollback()
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/reset_password', methods=['POST'])
-def reset_password():
-    data = request.json
-    username = data.get('username')
-    identity = data.get('identity') # Bisa email atau phone
-    new_password = data.get('new_password')
-
-    user = db_session.query(User).filter(User.username == username).first()
-
-    if not user:
-        return jsonify({"error": "Username tidak ditemukan"}), 404
-
-    # Cek apakah identity cocok dengan email ATAU phone di DB
-    if identity == user.email or identity == user.phone:
-        user.password = new_password
-        db_session.commit()
-        return jsonify({"message": "Password berhasil diubah!"}), 200
-    else:
-        return jsonify({"error": "Email atau Nomor Telepon tidak cocok dengan data"}), 401
+        return jsonify({"error": "Server error", "details": str(e)}), 500
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -326,19 +215,19 @@ def login():
 
         # Validasi input
         if not username or not password:
-            return jsonify({"error": "Username password dibutuhkan"}), 400
+            return jsonify({"error": "Username and password are required"}), 400
 
         # Cari user di database
         user = db_session.query(User).filter(User.username == username).first()
         if not user:
-            return jsonify({"error": "User tidak ditemukan, silakan registrasi!"}), 404
+            return jsonify({"error": "User not exist, please register first (gradingctl register)"}), 404
 
         # Validasi password
         if user.password != password:
-            return jsonify({"error": "Password salah!"}), 401
+            return jsonify({"error": "Invalid password"}), 401
 
         # Buat token (contoh sederhana)
-        token = f"dummy-token-kelompok{user.group_name}-{user.class_name}-{username}"
+        token = f"dummy-token-{username}-{user.class_name}"
         return jsonify({"token": token, "class_name": user.class_name}), 200
 
     except Exception as e:
@@ -350,20 +239,16 @@ def start_lab():
     try:
         auth_header = request.headers.get("Authorization", "")
         token = auth_header.replace("Bearer ", "")
-
+        
         # FIX 1: Ambil username dari token dulu!
-        username = token.split("-")[-1]
-
+        username = token.split("-")[2]
+        
         # FIX 2: Cari user dulu buat dapet group_name
         user = db_session.query(User).filter_by(username=username).first()
-        if not user: return jsonify({"error": "User tidak ditemukan"}), 404
+        if not user: return jsonify({"error": "User not found"}), 404
 
         data = request.get_json()
         lab_id = data.get("lab_id")
-
-        lab_exists = db_session.query(Lab).filter_by(lab_id=lab_id).first()
-        if not lab_exists:
-            return jsonify({"error": f"Lab '{lab_id}' tidak terdaftar dalam sistem!"}), 404
 
         # Shared Timer Logic
         session = db_session.query(LabSession).filter_by(group_name=user.group_name, lab_id=lab_id).first()
@@ -375,7 +260,7 @@ def start_lab():
         # Simpan lab yang aktif untuk token ini
         ACTIVE_LABS[token] = {"lab_id": lab_id, "status": "active", "start_time": session.first_start}
 
-        return jsonify({"message": f"Lab '{lab_id}' berhasil dimulai!"}), 200
+        return jsonify({"message": f"Lab '{lab_id}' started successfully"}), 200
 
     except Exception as e:
         print(f"Error in start_lab: {str(e)}")  # Debugging
@@ -387,7 +272,7 @@ def get_scheme_description():
     scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
 
     if not os.path.exists(scheme_file):
-        return jsonify({"error": "Lab tidak ditemukan"}), 404
+        return jsonify({"error": "Lab not found"}), 404
 
     with open(scheme_file, 'r') as f:
         scheme = json.load(f)
@@ -414,7 +299,7 @@ def get_scheme():
     scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
 
     if not os.path.exists(scheme_file):
-        return jsonify({"error": "Lab tidak ditemukan"}), 404
+        return jsonify({"error": "Lab not found"}), 404
 
     with open(scheme_file, 'r') as f:
         scheme = json.load(f)
@@ -431,25 +316,21 @@ def grade_lab():
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         data = request.get_json()
         if not data:
-            return jsonify({"error": "Data permintaan tidak valid"}), 400
+            return jsonify({"error": "Invalid request data"}), 400
 
         lab_id = data.get("lab_id")
         class_name = data.get("class_name")
         client_data = data.get("client_data", {})
 
         try:
-            username = token.split("-")[-1]
+            username = token.split("-")[2]
         except:
-            return jsonify({"error": "Token tidak valid"}), 401
+            return jsonify({"error": "Invalid token"}), 401
 
         # FIX 1: Gunakan satu nama variabel yang konsisten (user_info)
         user_info = db_session.query(User).filter_by(username=username).first()
-        if not user_info:
-            return jsonify({"error": "User tidak ditemukan"}), 404
-
-        lab_obj = db_session.query(Lab).filter_by(lab_id=lab_id).first()
-        # Mengutamakan default 'kelompok'
-        grading_type = getattr(lab_obj, 'grading_type', 'kelompok')
+        if not user_info: 
+            return jsonify({"error": "User not found"}), 404
 
         # FIX 2: Definisikan suffix di awal sebelum loop kriteria
         group = user_info.group_name.lower().strip().replace(" ", "")
@@ -461,7 +342,7 @@ def grade_lab():
 
         scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
         if not os.path.exists(scheme_file):
-            return jsonify({"error": "Lab tidak ditemukan"}), 404
+            return jsonify({"error": "Lab not found"}), 404
 
         with open(scheme_file, 'r') as f:
             scheme = json.load(f)
@@ -484,21 +365,21 @@ def grade_lab():
             if ctype in ["gitlab_project", "gitlab_pipeline"]:
                 # Pastikan menggunakan variabel 'username' yang sudah didefinisikan di atas
                 user = db_session.query(User).filter_by(username=username).first()
-
+                
                 if user:
                     import re
                     # Ambil angka dari "Grup 1" dan "10_sija1"
                     g_match = re.findall(r'\d+', user.group_name)
                     c_match = re.findall(r'\d+', user.class_name)
-
+                    
                     if g_match and c_match:
                         suffix = f"kelompok{g_match[0]}-sija{c_match[0]}"
                         # Buat key dinamis (kelompok1-sija1/...)
                         dynamic_key = key.replace("kelompokx-sijax", suffix)
-
+                        
                         # Ambil ID Project dari GitLab
                         project_id, err_msg = get_gitlab_project_id(dynamic_key)
-
+                        
                         if project_id:
                             if ctype == "gitlab_pipeline":
                                 # Case 1: Cek Pipeline
@@ -596,48 +477,56 @@ def grade_lab():
         print("DEBUG all_feedback:", all_feedback)
         print(f"Total score calculated: {total_score}")
 
-        duration = 0
-        penalty_messages = []
-        
-        session = db_session.query(LabSession).filter_by(group_name=user_info.group_name, lab_id=lab_id).first()
-        if session:
-            end_time = datetime.now(wib)
-            duration = (end_time - session.first_start.replace(tzinfo=wib)).total_seconds()
-            session.last_activity = end_time
-            session.total_duration = duration
+        try:
+            session = db_session.query(LabSession).filter_by(group_name=user_info.group_name, lab_id=lab_id).first()
+            if session:
+                end_time = datetime.now(wib)
+                # Hitung durasi dari start pertama kali grup mulai (mau Sila atau Isla yg klik)
+                duration = (end_time - session.first_start.replace(tzinfo=wib)).total_seconds()
+    
+                # Update aktivitas terakhir grup
+                session.last_activity = end_time
+                session.total_duration = duration
+                db_session.commit()
 
-        # Cek apakah ada yang sudah dapat 100 di kelas ini
-        is_first = db_session.query(GradingResult).filter_by(lab_id=lab_id, class_name=user_info.class_name, score=100).count() == 0
-        
-        # Pinalti Waktu (3% per 3 menit)
-        max_duration = 180 
-        if total_score > 0 and duration > max_duration:
-            if is_first:
-                penalty_messages.append("Bonus Pioneer: Pinalti diringankan karena solver yang pertama.")
-                total_score = max(total_score, 95)
-            else:
+            # Hitung durasi
+            #start_time = active_lab.get("start_time")
+            #end_time = datetime.now(wib)
+            #duration = (end_time - start_time).total_seconds() if start_time else None
+
+            # Penalty waktu (min 80, hanya kalau nilai > 0)
+            max_duration = 180   # 3 menit (detik)
+            penalty_percent = 5
+            min_score = 80
+            penalty_messages = []
+            score_awal = total_score
+
+            if total_score > 0 and duration is not None and duration > max_duration:
                 n_penalty = int((duration - max_duration) // max_duration) + 1
-                penalty_total = n_penalty * 3
-                total_score = max(80, total_score * (100 - penalty_total) / 100)
-                penalty_messages.append(f"Pinalti waktu: -{penalty_total}%")
+                penalty_total = n_penalty * penalty_percent
+                new_score = score_awal * (100 - penalty_total) / 100
+                if new_score < min_score:
+                    new_score = min_score
+                total_score = new_score
+                penalty_messages.append(
+                    f"Waktu pengerjaan melebihi 3 menit, pengurangan {penalty_percent}% per 3 menit. Nilai akhir: {new_score:.2f}"
+                )
 
-        # Anti-Nyontek (Batas 80)
-        if not is_first and duration < 60 and total_score > 90:
-            total_score = 80 
-            penalty_messages.append("Indikasi kecurangan: Nilai dibatasi ke 80.")
+            # Ambil info user dan grup
+            user_info = db_session.query(User).filter_by(username=username).first()
+            if not user_info:
+                return jsonify({"error": "User not found"}), 404
 
-        # 5. Simpan Hasil (Prioritas Kelompok)
-        def save_to_db(target_user):
-            existing_res = db_session.query(GradingResult).filter_by(username=target_user, lab_id=lab_id).first()
-            if existing_res:
-                existing_res.score = total_score
-                existing_res.feedback = ", ".join(all_feedback)
-                existing_res.duration = duration
-                existing_res.timestamp = datetime.now(wib)
-            else:
-                res = GradingResult(
-                    username=target_user,
-                    class_name=user_info.class_name,
+            group_name = user_info.group_name
+            class_name = user_info.class_name
+
+            group_users = db_session.query(User).filter_by(class_name=class_name, group_name=group_name).all()
+
+            # Simpan hasil ke semua anggota grup
+            for group_user in group_users:
+                grading_result = GradingResult(
+                    username=group_user.username,
+                    class_name=class_name,
                     lab_id=lab_id,
                     score=total_score,
                     feedback=", ".join(all_feedback),
@@ -645,18 +534,15 @@ def grade_lab():
                     status="done",
                     timestamp=datetime.now(wib)
                 )
-                db_session.add(res)
+                db_session.add(grading_result)
 
-        if grading_type == "kelompok":
-            # Update semua anggota kelompok
-            group_users = db_session.query(User).filter_by(class_name=user_info.class_name, group_name=user_info.group_name).all()
-            for g_user in group_users:
-                save_to_db(g_user.username)
-        else:
-            # Individu / Individu per kelompok
-            save_to_db(username)
+            db_session.commit()
 
-        db_session.commit()
+            print(f"Data saved for group '{group_name}': {[u.username for u in group_users]}, lab: {lab_id}, score: {total_score}")
+
+        except Exception as db_error:
+            print(f"Database Error: {str(db_error)}")
+            db_session.rollback()
 
         return jsonify({
             "score": total_score if total_score is not None else 0,
@@ -682,15 +568,15 @@ def finish_lab():
         # FIX: Jangan cuma ambil dari ACTIVE_LABS karena kalau restart server datanya ilang
         # Ambil username langsung dari token
         try:
-            username = token.split("-")[-1]
+            username = token.split("-")[2]
         except:
-            return jsonify({"error": "Token tidak valid"}), 401
+            return jsonify({"error": "Invalid token"}), 401
 
         data = request.get_json()
         lab_id = data.get("lab_id")
 
         if not lab_id:
-            return jsonify({"error": "lab_id dibutuhkan"}), 400
+            return jsonify({"error": "lab_id is required"}), 400
 
         # Jalankan cleanup
         #run_cleanup_actions(lab_id, username)
@@ -699,15 +585,7 @@ def finish_lab():
         if token in ACTIVE_LABS:
             del ACTIVE_LABS[token]
 
-        return jsonify({"message": f"Lab {lab_id} selesai!"}), 200
-
-        session = db_session.query(LabSession).filter_by(
-            group_name=user.group_name, 
-            lab_id=lab_id
-        ).first()
-
-        if not session:
-            return jsonify({"error": "Gagal! Anda belum memulai (start) lab ini!"}), 400
+        return jsonify({"message": f"Lab {lab_id} finished successfully!"}), 200
 
     except Exception as e:
         print(f"Error in finish_lab: {str(e)}")
@@ -721,19 +599,19 @@ def add_lab():
         scheme_path = data.get("scheme_path")
 
         if not lab_id or not scheme_path:
-            return jsonify({"error": "lab_id dan scheme_path dibutuhkan"}), 400
+            return jsonify({"error": "lab_id and scheme_path are required"}), 400
 
         # Cek apakah lab sudah ada
         existing_lab = db_session.query(Lab).filter(Lab.lab_id == lab_id).first()
         if existing_lab:
-            return jsonify({"error": "Lab sudah ada"}), 400
+            return jsonify({"error": "Lab already exists"}), 400
 
         # Buat lab baru
         new_lab = Lab(lab_id=lab_id, scheme_path=scheme_path)
         db_session.add(new_lab)
         db_session.commit()
 
-        return jsonify({"message": "Lab berhasil ditambahkan!"}), 201
+        return jsonify({"message": "Lab added successfully"}), 201
 
     except Exception as e:
         print(f"Error in add-lab: {str(e)}")  # Debugging
@@ -757,18 +635,18 @@ def delete_lab():
         lab_id = data.get("lab_id")
 
         if not lab_id:
-            return jsonify({"error": "lab_id dibutuhkan"}), 400
+            return jsonify({"error": "lab_id is required"}), 400
 
         # Cari lab berdasarkan ID
         lab = db_session.query(Lab).filter(Lab.lab_id == lab_id).first()
         if not lab:
-            return jsonify({"error": "Lab tidak ditemukan"}), 404
+            return jsonify({"error": "Lab not found"}), 404
 
         # Hapus lab
         db_session.delete(lab)
         db_session.commit()
 
-        return jsonify({"message": f"Lab '{lab_id}' berhasil dihapus!"}), 200
+        return jsonify({"message": f"Lab '{lab_id}' deleted successfully"}), 200
 
     except Exception as e:
         print(f"Error in delete-lab: {str(e)}")  # Debugging
@@ -801,7 +679,7 @@ def users_not_started_lab_filtered():
         }), 200
     except Exception as e:
         print(f"Error in users-not-started-lab-filtered: {str(e)}")
-        return jsonify({"error": "Gagal mengambil daftar user yang belum start lab", "details": str(e)}), 500
+        return jsonify({"error": "Failed to fetch users not started lab", "details": str(e)}), 500
 
 @app.route('/users-not-started-lab', methods=['GET'])
 def users_not_started_lab():
@@ -809,7 +687,7 @@ def users_not_started_lab():
         lab_id = request.args.get("lab_id")
 
         if not lab_id:
-            return jsonify({"error": "lab_id dibutuhkan"}), 400
+            return jsonify({"error": "lab_id is required"}), 400
 
         # Ambil semua user yang belum memulai lab ini
         users_started_lab = db_session.query(GradingResult.username).filter(GradingResult.lab_id == lab_id).all()
@@ -857,7 +735,7 @@ def get_users_and_labs():
         }), 200
     except Exception as e:
         print(f"Error fetching users and labs: {str(e)}")
-        return jsonify({"error": "Gagal mengambil data users dan labs", "details": str(e)}), 500
+        return jsonify({"error": "Failed to fetch users and labs", "details": str(e)}), 500
 
 @app.route('/results', methods=['GET'])
 def show_results():
@@ -900,7 +778,7 @@ def show_results():
 
             # 3. Logika Filter Angka 1-9 untuk tampilan
             only_number = "".join(filter(str.isdigit, gName))
-
+		
             if only_number and 1 <= int(only_number) <= 9:
                     result.display_group = f"Kelompok {only_number}"
             else:
@@ -926,7 +804,7 @@ def show_results():
         )
     except Exception as e:
         print("Error:", str(e))
-        return jsonify({"error": "Gagal mengambil data hasil", "details": str(e)}), 500
+        return jsonify({"error": "Failed to fetch results", "details": str(e)}), 500
 
 @app.route('/download-results', methods=['GET'])
 def download_results():
@@ -973,7 +851,7 @@ def download_results():
         writer = csv.writer(output)
 
         # Tulis header CSV
-        writer.writerow(['Username', 'Nama', 'Kelas', 'Kelompok', 'Lab ID', 'Score', 'Timestamp'])
+        writer.writerow(['Username', 'Nama', 'Kelas', 'Kelompok', 'Lab ID', 'Score', 'Feedback', 'Timestamp'])
 
         # Tulis data ke CSV
         for result in final_results:
@@ -985,7 +863,7 @@ def download_results():
                 user.group_name if user else '',
                 result.lab_id,
                 result.score,
-             #   result.feedback,
+                result.feedback,
                 result.timestamp.strftime('%Y-%m-%d %H:%M:%S')
             ])
 
@@ -999,7 +877,7 @@ def download_results():
 
     except Exception as e:
         print(f"Error generating CSV: {str(e)}")
-        return jsonify({"error": "Gagal membuat file CSV", "details": str(e)}), 500
+        return jsonify({"error": "Failed to generate CSV", "details": str(e)}), 500
 
 @app.route('/get-filters', methods=['GET'])
 def get_filters():
@@ -1018,7 +896,7 @@ def get_filters():
         }), 200
     except Exception as e:
         print(f"Error fetching filters: {str(e)}")
-        return jsonify({"error": "Gagal mengambil filter", "details": str(e)}), 500
+        return jsonify({"error": "Failed to fetch filters", "details": str(e)}), 500
 
 @app.route('/delete-result', methods=['POST'])
 def delete_result():
@@ -1026,25 +904,25 @@ def delete_result():
         data = request.get_json()
 
         if not data or "id" not in data:
-            return jsonify({"error": "Data permintaan tidak valid"}), 400
+            return jsonify({"error": "Invalid request data"}), 400
 
         result_id = data.get("id")
 
         # Cari data berdasarkan ID
         result = db_session.query(GradingResult).filter(GradingResult.id == result_id).first()
         if not result:
-            return jsonify({"error": "Hasil tidak ditemukan"}), 404
+            return jsonify({"error": "Result not found"}), 404
 
         # Hapus data dari database
         db_session.delete(result)
         db_session.commit()
 
-        return jsonify({"message": f"Hasil dengan ID {result_id} berhasil dihapus!"}), 200
+        return jsonify({"message": f"Result with ID {result_id} deleted successfully"}), 200
 
     except Exception as e:
         print(f"Error deleting result: {str(e)}")  # Debugging
         db_session.rollback()
-        return jsonify({"error": "Gagal menghapus hasil", "details": str(e)}), 500
+        return jsonify({"error": "Failed to delete result", "details": str(e)}), 500
 
 @app.route('/scheme-editor', methods=['GET'])
 def scheme_editor():
@@ -1053,7 +931,7 @@ def scheme_editor():
         return render_template('scheme_editor.html')
     except Exception as e:
         print(f"Error rendering scheme editor: {str(e)}")  # Debugging
-        return jsonify({"error": "Gagal membuat editor skema", "details": str(e)}), 500
+        return jsonify({"error": "Failed to load scheme editor", "details": str(e)}), 500
 
 @app.route('/create_scheme', methods=['GET', 'POST'])
 def create_scheme():
@@ -1085,15 +963,14 @@ def create_scheme():
         data = request.get_json()
 
         if not data or "lab_id" not in data or "criteria" not in data:
-            return jsonify({"error": "Data permintaan tidak valid"}), 400
+            return jsonify({"error": "Invalid request data"}), 400
 
         lab_id = data.get("lab_id")
         criteria = data.get("criteria")
-        grading_type = data.get("grading_type", "kelompok")
 
         # Validasi kriteria
         if not isinstance(criteria, list) or len(criteria) == 0:
-            return jsonify({"error": "Minimal satu kriteris wajib ada"}), 400
+            return jsonify({"error": "At least one criterion is required"}), 400
 
         # Hitung skor otomatis
         num_criteria = len(criteria)
@@ -1106,7 +983,6 @@ def create_scheme():
         # Buat skema baru
         scheme = {
             "lab_id": lab_id,
-            "grading_type": grading_type,
             "criteria": criteria
         }
 
@@ -1118,16 +994,16 @@ def create_scheme():
         # Tambahkan lab ke database jika belum ada
         existing_lab = db_session.query(Lab).filter(Lab.lab_id == lab_id).first()
         if not existing_lab:
-            new_lab = Lab(lab_id=lab_id, scheme_path=scheme_file, grading_type=grading_type)
+            new_lab = Lab(lab_id=lab_id, scheme_path=scheme_file)
             db_session.add(new_lab)
             db_session.commit()
 
-        return jsonify({"message": f"Skema '{lab_id}' berhasil dibuat!"}), 200
+        return jsonify({"message": f"Scheme '{lab_id}' created successfully"}), 200
 
     except Exception as e:
         print(f"Error creating scheme: {str(e)}")  # Debugging
         db_session.rollback()
-        return jsonify({"error": "Gagal membuat skema", "details": str(e)}), 500
+        return jsonify({"error": "Failed to create scheme", "details": str(e)}), 500
 
 @app.route('/edit_scheme', methods=['POST'])
 def edit_scheme():
@@ -1135,16 +1011,15 @@ def edit_scheme():
         data = request.get_json()
 
         if not data or "lab_id" not in data or "criteria" not in data:
-            return jsonify({"error": "Data permintaan tidak valid"}), 400
+            return jsonify({"error": "Invalid request data"}), 400
 
         lab_id = data.get("lab_id")
         criteria = data.get("criteria")
-        grading_type = data.get("grading_type", "kelompok") # Tangkap tipe grading
 
         # Hitung skor otomatis
         num_criteria = len(criteria)
         if num_criteria == 0:
-            return jsonify({"error": "Minimal satu kriteris wajib ada"}), 400
+            return jsonify({"error": "At least one criterion is required"}), 400
 
         score_per_criterion = 100 / num_criteria
 
@@ -1155,9 +1030,7 @@ def edit_scheme():
         # Buat skema baru
         scheme = {
             "lab_id": lab_id,
-            "grading_type": grading_type,
             "criteria": criteria
-
         }
 
         # Simpan skema ke file
@@ -1167,17 +1040,17 @@ def edit_scheme():
 
         # Tambahkan lab ke database jika belum ada
         existing_lab = db_session.query(Lab).filter(Lab.lab_id == lab_id).first()
-        if existing_lab:
-            existing_lab.scheme_path = scheme_file
-            existing_lab.grading_type = grading_type # Update tipe grading di DB
+        if not existing_lab:
+            new_lab = Lab(lab_id=lab_id, scheme_path=scheme_file)
+            db_session.add(new_lab)
             db_session.commit()
 
-        return jsonify({"message": f"Skema '{lab_id}' berhasil diupdate!"}), 200
+        return jsonify({"message": f"Scheme '{lab_id}' updated successfully"}), 200
 
     except Exception as e:
         print(f"Error editing scheme: {str(e)}")  # Debugging
         db_session.rollback()
-        return jsonify({"error": "Gagal mengubah skema", "details": str(e)}), 500
+        return jsonify({"error": "Failed to edit scheme", "details": str(e)}), 500
 
 @app.route('/edit_scheme/<lab_id>', methods=['GET'])
 def edit_scheme_page(lab_id):
@@ -1216,11 +1089,9 @@ def edit_scheme_post(lab_id):
     try:
         data = request.get_json()
         criteria = data.get("criteria")
-        grading_type = data.get("grading_type", "kelompok") # Tangkap tipe grading
         # Jika perlu, bisa compare lab_id dari data dan URL, tapi biasanya cukup dari URL
         scheme = {
             "lab_id": lab_id,
-            "grading_type": grading_type,
             "criteria": criteria
         }
         scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
@@ -1231,10 +1102,10 @@ def edit_scheme_post(lab_id):
         if existing_lab:
             existing_lab.scheme_path = scheme_file
             db_session.commit()
-        return jsonify({"message": f"Skema '{lab_id}' berhasil diupdate!"})
+        return jsonify({"message": f"Scheme '{lab_id}' updated successfully"})
     except Exception as e:
         db_session.rollback()
-        return jsonify({"error": "Gagal mengubah skema", "details": str(e)}), 500
+        return jsonify({"error": "Failed to edit scheme", "details": str(e)}), 500
 
 @app.route('/delete_scheme', methods=['POST'])
 def delete_scheme():
@@ -1242,13 +1113,13 @@ def delete_scheme():
         data = request.get_json()
 
         if not data or "lab_id" not in data:
-            return jsonify({"error": "Data permintaan tidak valid"}), 400
+            return jsonify({"error": "Invalid request data"}), 400
 
         lab_id = data.get("lab_id")
         scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
 
         if not os.path.exists(scheme_file):
-            return jsonify({"error": f"Skema '{lab_id}' tidak ditemukan"}), 404
+            return jsonify({"error": f"Scheme '{lab_id}' not found"}), 404
 
         # Hapus file skema
         os.remove(scheme_file)
@@ -1259,12 +1130,12 @@ def delete_scheme():
             db_session.delete(lab)
             db_session.commit()
 
-        return jsonify({"message": f"Skema '{lab_id}' berhasil dihapus!"}), 200
+        return jsonify({"message": f"Scheme '{lab_id}' deleted successfully"}), 200
 
     except Exception as e:
         print(f"Error deleting scheme: {str(e)}")  # Debugging
         db_session.rollback()
-        return jsonify({"error": "Gagal menghapus skema", "details": str(e)}), 500
+        return jsonify({"error": "Failed to delete scheme", "details": str(e)}), 500
 
 @app.route('/list-schemes', methods=['GET'])
 def list_schemes():
@@ -1290,7 +1161,7 @@ def list_schemes():
     except Exception as e:
         print(f"Error listing schemes: {str(e)}")  # Debugging
         db_session.rollback()
-        return jsonify({"error": "Gagal menampilkan daftar skema", "details": str(e)}), 500
+        return jsonify({"error": "Failed to list schemes", "details": str(e)}), 500
 
 @app.route('/')
 def home():
@@ -1378,121 +1249,41 @@ def gitlab_webhook():
 
     return jsonify({"message": "Pipeline recorded"}), 200
 
-def migrate_groups():
-    """Mengambil data kelompok unik dari tabel User dan memasukkannya ke tabel Group"""
-    try:
-        existing_groups = db_session.query(User.group_name).distinct().all()
-        for (g_name,) in existing_groups:
-            if g_name:
-                exists = db_session.query(Group).filter_by(group_name=g_name).first()
-                if not exists:
-                    new_group = Group(group_name=g_name)
-                    db_session.add(new_group)
-        db_session.commit()
-    except Exception as e:
-        print(f"Migration error: {e}")
-        db_session.rollback()
-
-def migrate_classes():
-    """Mengambil data kelas unik dari tabel User dan memasukkannya ke tabel Class"""
-    try:
-        # 1. Ambil semua class_name unik dari tabel User
-        existing_classes = db_session.query(User.class_name).distinct().all()
-
-        for (c_name,) in existing_classes:
-            if c_name:
-                # 2. Cek apakah kelas sudah ada di tabel Class agar tidak duplikat
-                exists = db_session.query(Class).filter_by(class_name=c_name).first()
-
-                if not exists:
-                    # 3. Masukkan ke tabel Class jika belum ada
-                    new_class = Class(class_name=c_name)
-                    db_session.add(new_class)
-                    print(f"Migrating class: {c_name}")
-
-        db_session.commit()
-        print("Migration Class selesai!")
-    except Exception as e:
-        print(f"Migration error: {e}")
-        db_session.rollback()
-
 @app.route('/admin', methods=['GET'])
 def admin_page():
     try:
-        # Jalankan migrasi agar data dari tabel User masuk ke tabel Class & Group
-        migrate_groups()
-        migrate_classes()
-
-        # --- LOGIKA PAGINATION ---
-        page = request.args.get('page', 1, type=int)
-        per_page = 10
-        offset = (page - 1) * per_page
-
-        # Ambil filter dari URL
+        # Ambil parameter filter dari URL
         class_filter = request.args.get('class_name', '')
         group_filter = request.args.get('group_name', '')
 
-        # Query dasar untuk User
+        # Query dasar
         query = db_session.query(User)
+
+        # Logika Filter
         if class_filter:
             query = query.filter(User.class_name == class_filter)
         if group_filter:
-            query = query.filter(User.group_name == group_filter)
+            # Mencari yang mengandung angka kelompok (misal: "1" atau "kelompok 1")
+            query = query.filter(User.group_name.like(f"%{group_filter}%"))
 
-        # Hitung total data & total halaman
-        total_users = query.count()
-        total_pages = (total_users + per_page - 1) // per_page
+        users = query.all()
+        
+        # Ambil data untuk isi dropdown (diambil dari semua user agar pilihan filter lengkap)
+        all_users = db_session.query(User).all()
+        classes = sorted(list(set([u.class_name for u in all_users if u.class_name])))
+        
+        # Ambil angka unik dari group_name untuk dropdown kelompok
+        groups_raw = list(set([u.group_name for u in all_users if u.group_name]))
+        groups = sorted([g for g in groups_raw if g])
 
-        # Ambil data user dengan limit 10 per halaman
-        users = query.offset(offset).limit(per_page).all()
-
-        # Ambil data untuk tabel bawah (Kelas & Kelompok) dan Dropdown
-        all_classes = db_session.query(Class).order_by(Class.class_name.asc()).all()
-        all_groups = db_session.query(Group).order_by(Group.group_name.asc()).all()
-
-        return render_template('admin.html',
-                               users=users,
-                               groups=all_groups,
-                               class_list=all_classes, # Untuk tabel data kelas
-                               classes=all_classes,    # Untuk dropdown filter
+        return render_template('admin.html', 
+                               users=users, 
+                               classes=classes, 
+                               groups=groups,
                                selected_class=class_filter,
-                               selected_group=group_filter,
-                               page=page,
-                               total_pages=total_pages)
+                               selected_group=group_filter)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-@app.route('/add_group_db', methods=['POST'])
-def add_group_db():
-    data = request.json
-    name = data.get("group_name")
-    if not name: return jsonify({"error": "Nama kosong"}), 400
-    if db_session.query(Group).filter_by(group_name=name).first():
-        return jsonify({"error": "Kelompok sudah ada"}), 400
-    db_session.add(Group(group_name=name))
-    db_session.commit()
-    return jsonify({"message": f"Kelompok {name} berhasil ditambahkan"})
-
-@app.route('/get_groups', methods=['GET'])
-def get_groups():
-    try:
-        # Mengambil semua kelompok dari tabel Group, urut abjad
-        all_groups = db_session.query(Group).order_by(Group.group_name.asc()).all()
-        group_list = [g.group_name for g in all_groups]
-        return jsonify({"groups": group_list}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/delete_group', methods=['POST'])
-def delete_group():
-    data = request.json
-    name = data.get("group_name")
-    group = db_session.query(Group).filter_by(group_name=name).first()
-    if group:
-        db_session.delete(group)
-        db_session.commit()
-        return jsonify({"message": "Kelompok dihapus"})
-    return jsonify({"error": "Gagal menghapus"}), 404
 
 @app.route('/delete_user', methods=['POST'])
 def delete_user():
@@ -1500,43 +1291,17 @@ def delete_user():
         data = request.json
         username = data.get("username")
         if not username:
-            return jsonify({"error": "Username dibutuhkan"}), 400
+            return jsonify({"error": "Username is required"}), 400
 
         user = db_session.query(User).filter(User.username == username).first()
         if not user:
-            return jsonify({"error": "User tidak ditemukan"}), 404
+            return jsonify({"error": "User not found"}), 404
 
         db_session.delete(user)
         db_session.commit()
-        return jsonify({"message": f"User {username} berhasil dihapus"}), 200
+        return jsonify({"message": f"User {username} deleted successfully"}), 200
     except Exception as e:
         db_session.rollback()
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/add_class_db', methods=['POST'])
-def add_class_db():
-    data = request.json
-    new_class = Class(class_name=data.get('class_name'))
-    db_session.add(new_class)
-    db_session.commit()
-    return jsonify({"message": "Berhasil"}), 200
-
-@app.route('/delete_class', methods=['POST'])
-def delete_class():
-    data = request.json
-    name = data.get('class_name')
-    db_session.query(Class).filter(Class.class_name == name).delete()
-    db_session.commit()
-    return jsonify({"message": "Dihapus"}), 200
-
-@app.route('/get_classes', methods=['GET'])
-def get_classes():
-    try:
-        # Mengambil semua kelas dari tabel Class, urut abjad
-        all_classes = db_session.query(Class).order_by(Class.class_name.asc()).all()
-        class_list = [c.class_name for c in all_classes]
-        return jsonify({"classes": class_list}), 200
-    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":

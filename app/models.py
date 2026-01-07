@@ -9,6 +9,8 @@ class User(Base):
     username = Column(String, primary_key=True)  # Username sebagai primary key
     password = Column(String, nullable=False)    # Password untuk login
     name = Column(String)
+    email = Column(String)  # Tambahkan ini
+    phone = Column(String)
     group_name = Column(String)
     class_name = Column(String, nullable=False)  # Nama kelas (enum: 10_sija1, 10_sija2, dll.)
 
@@ -16,6 +18,7 @@ class Lab(Base):
     __tablename__ = 'labs'
     lab_id = Column(String, primary_key=True)    # ID lab sebagai primary key
     scheme_path = Column(String, nullable=False) # Path ke file skema lab
+    grading_type = Column(String, default="kelompok", server_default="kelompok") # individu, kelompok, individu_per_kelompok
 
 class GradingResult(Base):
     __tablename__ = 'grading_results'
@@ -37,3 +40,11 @@ class LabSession(Base):
     first_start = Column(DateTime) # Dikunci saat orang pertama di grup klik start
     last_activity = Column(DateTime) # Update setiap kali ada aktivitas
     total_duration = Column(Float, default=0.0) # Durasi dalam detik
+
+class Group(Base):
+    __tablename__ = 'groups'
+    group_name = Column(String, primary_key=True) # Nama kelompok unik
+
+class Class(Base):
+    __tablename__ = 'classes'
+    class_name = Column(String, primary_key=True)

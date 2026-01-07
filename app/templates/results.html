@@ -151,7 +151,7 @@
             </select>
             <button type="submit">Filter</button>
         </form>
-	
+
         <table>
             <thead>
                 <tr>
@@ -175,9 +175,9 @@
                         <td>{{ result.lab_id }}</td>
                         <td style="text-align: center;">{{ result.score }}</td>
                         <td style="text-align: center;">{{ result.local_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-			<td style="text-align: center;">
-			    {{ ((result.duration or 0) // 60)|int }} mins
-			</td>
+                        <td style="text-align: center;">
+                            {{ ((result.duration or 0) // 60)|int }} mins
+                        </td>
 
                         {#<td>
                             {% if result.status == "done" %}
@@ -199,7 +199,7 @@
             {% if page > 1 %}
                 <a href="/results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}&search_name={{ search_name or '' }}&group_name={{ group_name or '' }}&page={{ page - 1 }}" class="btn">Previous</a>
             {% endif %}
-            <span>Page {{ page }} of {{ total_pages }}</span>
+            <span> {{ page }} / {{ total_pages }}</span>
             {% if page < total_pages %}
                 <a href="/results?class_name={{ class_name or '' }}&lab_id={{ lab_id or '' }}&search_name={{ search_name or '' }}&group_name={{ group_name or '' }}&page={{ page + 1 }}" class="btn">Next</a>
             {% endif %}
@@ -216,7 +216,7 @@
 
             // Isi dropdown class_name
             const classSelect = document.getElementById('class_name');
-            const classMap = new Map(); 
+            const classMap = new Map();
 
             data.users.forEach(user => {
               // key = versi normal lowercase (untuk dedup), value = tampilan asli
@@ -244,45 +244,45 @@
             });
 
 // --- ISI DROPDOWN KELOMPOK (HANYA 1-9) ---
-	const groupSelect = document.getElementById('group_name');
-	const groupMap = new Map();
+        const groupSelect = document.getElementById('group_name');
+        const groupMap = new Map();
 
-	data.users.forEach(user => {
-		let gName = (user.group_name || '').trim();
-		if (!gName) return;
+        data.users.forEach(user => {
+                let gName = (user.group_name || '').trim();
+                if (!gName) return;
 
-		// Ambil hanya karakter angka dari string (misal "Kelompok 1" jadi "1")
-		let onlyNumber = gName.replace(/\D/g, '');
-		let groupNum = parseInt(onlyNumber);
+                // Ambil hanya karakter angka dari string (misal "Kelompok 1" jadi "1")
+                let onlyNumber = gName.replace(/\D/g, '');
+                let groupNum = parseInt(onlyNumber);
 
-		// Filter ketat: Hanya masukkan jika itu angka 1 sampai 9
-		if (groupNum >= 1 && groupNum <= 9) {
-			let realValue = groupNum.toString();
-			let displayValue = "Kelompok " + groupNum;
+                // Filter ketat: Hanya masukkan jika itu angka 1 sampai 9
+                if (groupNum >= 1 && groupNum <= 9) {
+                        let realValue = groupNum.toString();
+                        let displayValue = "Kelompok " + groupNum;
 
-			if (!groupMap.has(realValue)) {
-				groupMap.set(realValue, {
-					realValue: realValue,
-					text: displayValue,
-					num: groupNum
-				});
-			}
-		}
-	});
+                        if (!groupMap.has(realValue)) {
+                                groupMap.set(realValue, {
+                                        realValue: realValue,
+                                        text: displayValue,
+                                        num: groupNum
+                                });
+                        }
+                }
+        });
 
-	// Urutkan berdasarkan angka (1, 2, 3...)
-	const sortedGroups = Array.from(groupMap.values()).sort((a, b) => a.num - b.num);
+        // Urutkan berdasarkan angka (1, 2, 3...)
+        const sortedGroups = Array.from(groupMap.values()).sort((a, b) => a.num - b.num);
 
-	sortedGroups.forEach((group) => {
-		const option = document.createElement('option');
-		option.value = group.realValue; // Mengirim angka ke server (misal "1")
-		option.textContent = group.text; // Tampilan di web "Kelompok 1"
-		
-		if ("{{ group_name or '' }}" === group.realValue) {
-			option.selected = true;
-		}
-		groupSelect.appendChild(option);
-	});
+        sortedGroups.forEach((group) => {
+                const option = document.createElement('option');
+                option.value = group.realValue; // Mengirim angka ke server (misal "1")
+                option.textContent = group.text; // Tampilan di web "Kelompok 1"
+
+                if ("{{ group_name or '' }}" === group.realValue) {
+                        option.selected = true;
+                }
+                groupSelect.appendChild(option);
+        });
 
             // NEW: dropdown user by NAME (unik)
             const userSelect = document.getElementById('search_name');
@@ -337,7 +337,7 @@
             document.getElementById('class_name').value = '';
             document.getElementById('lab_id').value = '';
             document.getElementById('search_name').value = '';
-	    document.getElementById('group_name').value = ''; // Tambahkan ini
+            document.getElementById('group_name').value = ''; // Tambahkan ini
             window.location.href = '/results';  // Reload halaman tanpa filter
         }
     </script>
