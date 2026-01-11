@@ -8,7 +8,76 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+
     <style>
+body {
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s ease;
+}
+
+#sidebar {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.3s;
+}
+
+#main-content {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================= */
+/* SIDEBAR COLLAPSED */
+/* ========================= */
+.sidebar-collapsed {
+    width: 80px !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+
+/* sembunyiin teks */
+.sidebar-collapsed .nav-text,
+.sidebar-collapsed .sidebar-header-text,
+.sidebar-collapsed .admin-text {
+    display: none !important;
+}
+
+/* nav item tetap horizontal */
+.sidebar-collapsed .nav-item {
+    justify-content: flex-start !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+/* margin icon tetap rapi */
+.sidebar-collapsed .nav-item i {
+    margin-right: 0 !important;
+}
+
+/* header (☰) biar nggak aneh */
+.sidebar-collapsed .px-3.py-4 {
+    justify-content: center;
+}
+
+/* admin avatar */
+.sidebar-collapsed .admin-container {
+    justify-content: center;
+}
+
+/* ========================= */
+/* ACTIVE INDICATOR */
+/* ========================= */
+.sidebar-active-indicator {
+    position: absolute;
+    left: 0;
+    width: 4px;
+    height: 20px;
+    background-color: white;
+    border-radius: 0 4px 4px 0;
+}
+
+/* ❌ HILANG SAAT COLLAPSE */
+.sidebar-collapsed .sidebar-active-indicator {
+    display: none !important;
+}    <style>
 body {
     font-family: 'Inter', sans-serif;
     transition: all 0.3s ease;
@@ -369,6 +438,15 @@ body {
 </style>
 
 <script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        sidebar.classList.toggle('sidebar-collapsed');
+        mainContent.style.marginLeft = sidebar.classList.contains('sidebar-collapsed')
+            ? "85px"
+            : "256px";
+    }
+
     // --- 1. INITIALIZATION ---
     let editor = null;
     let currentOpenPath = "";
@@ -645,20 +723,6 @@ function closeScriptEditor() {
         });
         lucide.createIcons();
     }
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const main = document.getElementById('main-content');
-
-    sidebar.classList.toggle('sidebar-collapsed');
-
-    if (sidebar.classList.contains('sidebar-collapsed')) {
-        main.classList.remove('ml-64');
-        main.classList.add('ml-[80px]');
-    } else {
-        main.classList.remove('ml-[80px]');
-        main.classList.add('ml-64');
-    }
-}
 </script>
 </body>
 </html>

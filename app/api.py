@@ -33,6 +33,7 @@ import random
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+app.secret_key = 'sijagoan'
 
 SCHEME_PATH = "/opt/grading/app/schemes/"
 GITLAB_URL = "https://gitlab.smkn1cibinong.sch.id"
@@ -133,6 +134,22 @@ def sync_labs_from_schemes():
             existing.add(lab_id)
 
     db_session.commit()
+
+def load_static_users():
+    # Sesuaikan path agar menunjuk ke /opt/grading/app/users.json
+    file_path = "/opt/grading/app/users.json"
+    try:
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+                # Jika formatnya {"username": "admin", "password": "..."}
+                if "username" in data:
+                    return {data["username"]: data["password"]}
+                return data
+    except Exception as e:
+        print(f"Error loading users: {e}")
+    
+    return {"admin": "SIJAGOAN"} # Fallback jika file rusak/tidak ada
 
 def run_cleanup_actions(lab_id, username):
     import re
@@ -853,6 +870,9 @@ def get_users_and_labs():
 
 @app.route('/results', methods=['GET'])
 def show_results():
+    if not session.get('logged_in'):
+        return redirect(url_for('login_web'))
+
     try:
         class_name = request.args.get("class_name")
         lab_id = request.args.get("lab_id")
@@ -1123,6 +1143,9 @@ def create_scheme():
 
 @app.route('/edit_scheme', methods=['POST'])
 def edit_scheme():
+    if not session.get('logged_in'):
+        return redirect(url_for('login_web'))
+
     try:
         data = request.get_json()
 
@@ -1173,6 +1196,9 @@ def edit_scheme():
 
 @app.route('/edit_scheme/<lab_id>', methods=['GET'])
 def edit_scheme_page(lab_id):
+    if not session.get('logged_in'):
+        return redirect(url_for('login_web'))
+
     scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
     if not os.path.exists(scheme_file):
         return "Scheme not found", 404
@@ -1205,6 +1231,9 @@ def edit_scheme_page(lab_id):
 
 @app.route('/edit_scheme/<lab_id>', methods=['POST'])
 def edit_scheme_post(lab_id):
+    if not session.get('logged_in'):
+        return redirect(url_for('login_web'))
+
     try:
         data = request.get_json()
         criteria = data.get("criteria")
@@ -1287,10 +1316,15 @@ def list_schemes():
 
 @app.route('/')
 def home():
-    return redirect(url_for('dashboard'))
+    if session.get('logged_in'):
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login_web'))
 
 @app.route('/schemes')
 def scheme_list():
+    if not session.get('logged_in'):
+        return redirect(url_for('login_web'))
+
     order_by = request.args.get('order_by', 'name_asc')
 
     schemes = []
@@ -1313,6 +1347,9 @@ def scheme_list():
 
 @app.route('/add_scheme')
 def add_scheme():
+    if not session.get('logged_in'):
+        return redirect(url_for('login_web'))
+
     types = ["command", "file_exists", "file_content", "service", "directory", "config_check", "package", "user", "group", "gitlab_pipeline", "gitlab_project", "gitlab_runner", "image", "instance", "grafana_alert_rule", "grafana_alert_firing", "gmail_alert_email" ]
     expected = {
         "command": ["true", "false"],
@@ -1415,6 +1452,9 @@ def migrate_classes():
 
 @app.route('/admin', methods=['GET'])
 def admin_page():
+    if not session.get('logged_in'):
+        return redirect(url_for('login_web'))
+
     try:
         # Jalankan migrasi agar data dari tabel User masuk ke tabel Class & Group
         migrate_groups()
@@ -1538,6 +1578,9 @@ def get_classes():
 
 @app.route('/dashboard')
 def dashboard():
+    if not session.get('logged_in'):
+        return redirect(url_for('login_web'))
+
     # Total users dan labs - GUNAKAN db_session yang sudah diimport
     total_users = db_session.query(User).count()
     total_labs = db_session.query(Lab).count()
@@ -1596,30 +1639,37 @@ def dashboard():
                          classes=classes,
                          class_progress=class_progress)
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/auth', methods=['GET', 'POST'])
 def login_web():
     if request.method == 'POST':
-        # silent=True mencegah error 415 jika data bukan JSON murni
-        data = request.get_json(silent=True) 
-        
-        # Jika data kosong (mungkin karena kirim via form biasa), coba ambil dari form
-        username = (data or {}).get('username') or request.form.get('username')
-        password = (data or {}).get('password') or request.form.get('password')
+        try:
+            # Ambil data dari JSON (fetch) atau Form
+            data = request.get_json(silent=True) or {}
+            username = data.get('username') or request.form.get('username')
+            password = data.get('password') or request.form.get('password')
 
-        if username == 'admin' and password == 'SIJAGOAN':
-            session['logged_in'] = True
-            session['username'] = username
-            
-            # Cek apakah request minta JSON atau redirect biasa
+            static_users = load_static_users()
+
+            if username in static_users and static_users[username] == password:
+                session.permanent = True # Session tetap ada meski browser di-close (opsional)
+                session['logged_in'] = True
+                session['username'] = username
+
+                # Redirect ke dashboard setelah sukses
+                if request.is_json or request.headers.get('Accept') == 'application/json':
+                    return jsonify({"success": True, "redirect": url_for('dashboard')})
+                return redirect(url_for('dashboard'))
+
+            # Jika gagal
+            error_msg = "Username atau Password Salah!"
             if request.is_json or request.headers.get('Accept') == 'application/json':
-                return jsonify({"success": True, "redirect": url_for('home')})
-            return redirect(url_for('home'))
-        
-        else:
-            if request.is_json:
-                return jsonify({"success": False, "error": "Kredensial Salah"}), 401
-            flash('Invalid credentials')
-            return redirect(url_for('login_web'))
+                return jsonify({"success": False, "error": error_msg}), 401
+            
+            flash(error_msg)
+            return render_template('login.html')
+
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
 
     return render_template('login.html')
 
