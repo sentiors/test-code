@@ -3,177 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grading Scheme Editor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Scheme List - GradingCTL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-            text-align: center;
-        }
-        .container {
-            max-width: 900px;
-            margin: 50px auto;
-            background: #fff;
-            padding: 40px 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 25px;
-        }
-        .top-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 8px 16px;
-            font-size: 14px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            text-decoration: none;
-            color: #fff;
-            transition: background 0.3s;
-        }
-        .btn-result {
-            background-color: #28a745;
-        }
-        .btn-result:hover {
-            background-color: #218838;
-        }
-        .btn-add {
-            background-color: #007bff;
-        }
-        .btn-add:hover {
-            background-color: #0056b3;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        .btn-edit {
-            background-color: #ffc107;
-            color: #000;
-        }
-        .btn-edit:hover {
-            background-color: #e0a800;
-        }
-        .btn-delete {
-            background-color: #dc3545;
-        }
-        .btn-delete:hover {
-            background-color: #c82333;
-        }
-        table td {
-            vertical-align: middle;
-        }
-.filter-form {
-    margin-bottom: 20px;
-}
-.filter-form select {
-    padding: 8px;
-    margin-right: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-}
-.filter-form button {
-    padding: 8px 16px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-.filter-form button:hover {
-    background-color: #0056b3;
+body {
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s ease;
 }
 
+#sidebar {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.3s;
+}
+
+#main-content {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================= */
+/* SIDEBAR COLLAPSED */
+/* ========================= */
+.sidebar-collapsed {
+    width: 80px !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+
+/* sembunyiin teks */
+.sidebar-collapsed .nav-text,
+.sidebar-collapsed .sidebar-header-text,
+.sidebar-collapsed .admin-text {
+    display: none !important;
+}
+
+/* nav item tetap horizontal */
+.sidebar-collapsed .nav-item {
+    justify-content: flex-start !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+/* margin icon tetap rapi */
+.sidebar-collapsed .nav-item i {
+    margin-right: 0 !important;
+}
+
+/* header (☰) biar nggak aneh */
+.sidebar-collapsed .px-3.py-4 {
+    justify-content: center;
+}
+
+/* admin avatar */
+.sidebar-collapsed .admin-container {
+    justify-content: center;
+}
+
+/* ========================= */
+/* ACTIVE INDICATOR */
+/* ========================= */
+.sidebar-active-indicator {
+    position: absolute;
+    left: 0;
+    width: 4px;
+    height: 20px;
+    background-color: white;
+    border-radius: 0 4px 4px 0;
+}
+
+/* ❌ HILANG SAAT COLLAPSE */
+.sidebar-collapsed .sidebar-active-indicator {
+    display: none !important;
+}
+
+        .premium-shadow {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12), 0 12px 20px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Scheme Lists</h1>
+<body class="bg-gray-50 text-gray-900 overflow-x-hidden">
 
-        <form class="filter-form" method="GET" action="/">
-            <select name="order_by" id="order_by">
-                <option value="name_asc"  {% if order_by == 'name_asc' %}selected{% endif %}>Lab ID A–Z</option>
-                <option value="name_desc" {% if order_by == 'name_desc' %}selected{% endif %}>Lab ID Z–A</option>
-            </select>
-            <button type="submit">Sort</button>
-        </form>
-
-        <div class="top-actions">
-            <a href="/results" class="btn btn-result">Lab Results</a>
-            <a href="/add_scheme" class="btn btn-add">Add New Scheme</a>
+    <aside id="sidebar" class="fixed left-3 top-3 bottom-3 w-64 bg-black rounded-[1.5rem] flex flex-col p-4 text-white shadow-xl z-50 overflow-hidden">
+        <div class="px-3 py-4 flex items-center justify-between">
+            <h1 class="text-xl font-bold tracking-tight sidebar-header-text">GradingCTL</h1>
+            <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-800 rounded-lg transition-colors flex items-center justify-center">
+                <i data-lucide="menu" class="w-5 h-5 text-white"></i>
+            </button>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 70px;">No</th>
-                    <th>Lab Name</th>
-                    <th style="width: 200px;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for scheme in schemes %}
-                <tr>
-                    <td class="text-center">{{ loop.index }}</td>
-                    <td>
-                        <a href="/edit_scheme/{{ scheme.lab_id }}" class="text-decoration-none">
-                            {{ scheme.lab_id }}
-                        </a>
-                    </td>
-                    <td>
-                        <a href="/edit_scheme/{{ scheme.lab_id }}" class="btn btn-edit btn-sm">Edit</a>
-                        <button class="btn btn-delete btn-sm" onclick="deleteScheme('{{ scheme.lab_id }}')">Delete</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        <div class="w-full h-[1px] bg-gray-800 mb-6"></div>
 
-    <script>
-        function deleteScheme(lab_id) {
-            if (confirm("Are you sure you want to delete this scheme?")) {
-                fetch('/delete_scheme', {
+        <div class="px-3 mb-6 flex items-center gap-3 admin-container">
+            <div class="w-10 h-10 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center">
+                <i data-lucide="user" class="w-5 h-5 text-gray-300"></i>
+            </div>
+            <span class="font-medium text-base admin-text">Admin</span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <nav class="space-y-1">
+                <a href="/" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="layout-dashboard" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Dashboard</span>
+                </a>
+                <a href="/schemes" class="nav-item group flex items-center px-3 py-2.5 text-white relative bg-gray-900 rounded-xl transition-all">
+                    <div class="sidebar-active-indicator"></div>
+                    <i data-lucide="list" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Scheme List</span>
+                </a>
+                <a href="/results" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="file-text" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Grading Result</span>
+                </a>
+                <a href="/admin" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="settings" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Management</span>
+                </a>
+            </nav>
+
+            <div class="px-3 my-4"><div class="w-full h-[1px] bg-gray-800"></div></div>
+
+            <a href="/logout" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-red-400 hover:bg-gray-900 rounded-xl transition-all">
+                <i data-lucide="log-out" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="text-sm nav-text">Log Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <main id="main-content" class="ml-64 p-8 min-h-screen flex justify-center">
+        <div class="max-w-5xl w-full">
+            <header class="mb-6">
+                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Scheme List</h1>
+                <p class="text-gray-500">Manage your lab grading parameters</p>
+                <div class="w-full h-1 bg-gray-200 mt-4 rounded-full"></div>
+            </header>
+
+            <div class="mb-6 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sort:</span>
+                    <select id="sort-filter" onchange="sortTable()" class="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer">
+                        <option value="az">A - Z</option>
+                        <option value="za">Z - A</option>
+                    </select>
+                </div>
+                <a href="/add_scheme" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-200 uppercase tracking-wide">
+                    <i data-lucide="plus" class="w-4 h-4 text-white"></i>
+                    Add Scheme
+                </a>
+            </div>
+
+            <div class="bg-white rounded-[2rem] premium-shadow border border-gray-100 overflow-hidden">
+                <table id="scheme-table" class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100">
+                            <th class="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest">No</th>
+                            <th class="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest">Lab Name</th>
+                            <th class="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for scheme in schemes %}
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            <td class="px-8 py-5 text-sm text-gray-400 font-medium w-24">#{{ loop.index }}</td>
+
+                            <td class="px-8 py-5 text-base font-semibold text-gray-800 lab-name">{{ scheme.lab_id }}</td>
+
+                            <td class="px-8 py-5">
+                                <div class="flex justify-center gap-4">
+                                    <a href="/edit_scheme/{{ scheme.lab_id }}" class="p-2 text-amber-500 hover:bg-amber-50 rounded-xl transition-all flex items-center justify-center" title="Edit">
+                                        <i data-lucide="edit-3" class="w-5 h-5"></i>
+                                    </a>
+                                    <button onclick="deleteScheme('{{ scheme.lab_id }}')" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all flex items-center justify-center" title="Delete">
+                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="px-8 py-20 text-center">
+                                <div class="flex flex-col items-center text-gray-300">
+                                    <i data-lucide="folder-open" class="w-16 h-16 mb-4 opacity-20"></i>
+                                    <p class="text-lg italic font-medium">No schemes found.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+<div id="customModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 overflow-x-hidden overflow-y-auto bg-black/60 backdrop-blur-sm">
+    <div class="relative bg-white rounded-[2rem] p-5 w-full max-w-[320px] shadow-2xl modal-enter border border-gray-100 text-center">
+        <div id="modalIconBg" class="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <i id="modalIcon" data-lucide="alert-circle" class="w-5 h-5"></i>
+        </div>
+
+        <h3 id="modalTitle" class="text-lg font-bold text-gray-900 leading-tight mb-1">Notice</h3>
+        <p id="modalMessage" class="text-[11px] text-gray-500 mb-5 leading-relaxed"></p>
+
+        <div id="modalFooter" class="flex gap-2"></div>
+    </div>
+</div>
+
+<style>
+    .modal-enter { animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes modalIn {
+        from { opacity: 0; transform: scale(0.9) translateY(20px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+</style>
+
+<script>
+    lucide.createIcons();
+
+    // --- MODAL SYSTEM ---
+    const modal = {
+        el: document.getElementById('customModal'),
+        iconBg: document.getElementById('modalIconBg'),
+        icon: document.getElementById('modalIcon'),
+        title: document.getElementById('modalTitle'),
+        msg: document.getElementById('modalMessage'),
+        footer: document.getElementById('modalFooter'),
+
+        show({ type = 'info', title, message, onConfirm = null, showCancel = false }) {
+            this.el.classList.remove('hidden');
+            this.title.innerText = title;
+            this.msg.innerText = message;
+            this.footer.innerHTML = '';
+
+            if (type === 'warning') {
+                this.iconBg.className = "w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-3";
+                this.icon.className = "w-5 h-5 text-amber-600";
+                this.icon.setAttribute('data-lucide', 'alert-triangle');
+            } else if (type === 'error') {
+                this.iconBg.className = "w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-3";
+                this.icon.className = "w-5 h-5 text-red-600";
+                this.icon.setAttribute('data-lucide', 'x-circle');
+            } else if (type === 'success') {
+                this.iconBg.className = "w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-3";
+                this.icon.className = "w-5 h-5 text-green-600";
+                this.icon.setAttribute('data-lucide', 'check-circle');
+            }
+
+            lucide.createIcons();
+
+            if (showCancel) {
+                const btnCancel = document.createElement('button');
+                btnCancel.className = "flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-all";
+                btnCancel.innerText = 'Cancel';
+                btnCancel.onclick = () => this.hide();
+                this.footer.appendChild(btnCancel);
+            }
+
+            const btnOk = document.createElement('button');
+            // Warna merah jika tipenya warning/error (untuk delete)
+            const colorClass = (type === 'warning' || type === 'error') ? "bg-red-600 shadow-red-200 hover:bg-red-700" : "bg-blue-600 shadow-blue-200 hover:bg-blue-700";
+            btnOk.className = `flex-1 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg transition-all ${colorClass}`;
+            btnOk.innerText = onConfirm ? 'Confirm' : 'Got it';
+            btnOk.onclick = () => {
+                this.hide();
+                if (onConfirm) onConfirm();
+            };
+            this.footer.appendChild(btnOk);
+        },
+        hide() { this.el.classList.add('hidden'); }
+    };
+
+    // --- DELETE LOGIC ---
+    function deleteScheme(labId) {
+        modal.show({
+            type: 'warning',
+            title: 'Delete Scheme?',
+            message: `Are you sure you want to permanently delete "${labId}"? This action cannot be undone.`,
+            showCancel: true,
+            onConfirm: () => {
+                fetch('/delete-lab', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ lab_id: lab_id })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lab_id: labId })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    alert(data.message || data.error);
-                    window.location.reload();
+                .then(res => {
+                    if (res.ok) {
+                        window.location.reload();
+                    } else {
+                        modal.show({ 
+                            type: 'error', 
+                            title: 'Delete Failed', 
+                            message: 'Could not delete lab. Please ensure no student grades are linked to this scheme.' 
+                        });
+                    }
+                })
+                .catch(err => {
+                    modal.show({ type: 'error', title: 'Error', message: 'Something went wrong with the server connection.' });
                 });
             }
-        }
-    </script>
+        });
+    }
+
+    // --- SIDEBAR & SORT ---
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        sidebar.classList.toggle('sidebar-collapsed');
+        mainContent.style.marginLeft = sidebar.classList.contains('sidebar-collapsed') ? "85px" : "256px";
+    }
+
+    function sortTable() {
+        const val = document.getElementById('sort-filter').value;
+        const tbody = document.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr:not(:has(td[colspan]))'));
+        if (rows.length === 0) return;
+
+        rows.sort((a, b) => {
+            const nameA = a.querySelector('.lab-name').textContent.trim().toLowerCase();
+            const nameB = b.querySelector('.lab-name').textContent.trim().toLowerCase();
+            return val === 'az' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        });
+
+        rows.forEach((row, index) => {
+            row.querySelector('td:first-child').textContent = `#${index + 1}`;
+            tbody.appendChild(row);
+        });
+    }
+</script>
 </body>
 </html>
-

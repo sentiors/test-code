@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - GradingCTL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f9fafb; }
+        .login-card {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+
+    <div class="fixed top-20 left-20 w-64 h-64 bg-[#F9E886] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float"></div>
+    <div class="fixed bottom-20 right-20 w-64 h-64 bg-[#A4C4FF] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float" style="animation-delay: 2s;"></div>
+
+    <div class="w-full max-w-[400px] relative z-10">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-black rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 shadow-xl rotate-3">
+                <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
+            </div>
+            <h1 class="text-3xl font-black text-gray-900 tracking-tighter">GradingCTL</h1>
+            <p class="text-sm text-gray-500 font-medium">System Control Authentication</p>
+        </div>
+
+        <div class="bg-white/80 backdrop-blur-xl login-card rounded-[2.5rem] p-8">
+            <form action="{{ url_for('login_web') }}" method="POST" class="space-y-5">
+                
+                {% with messages = get_flashed_messages() %}
+                  {% if messages %}
+                    <div class="bg-red-50 border border-red-100 text-red-600 text-xs font-bold px-4 py-3 rounded-2xl flex items-center gap-2">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        {{ messages[0] }}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2 ml-1">Username</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <input type="text" name="username" required
+                            class="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-black/5 focus:bg-white transition-all"
+                            placeholder="admin_id">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2 ml-1">Password</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <input type="password" name="password" required
+                            class="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-black/5 focus:bg-white transition-all"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" 
+                        class="w-full bg-black text-white rounded-2xl py-4 text-sm font-bold shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group">
+                        Sign In
+                        <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <p class="text-center mt-8 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            &copy; 2024 System Monitoring Engine
+        </p>
+    </div>
+
+<script>
+    lucide.createIcons();
+
+    const loginForm = document.querySelector('form');
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    e.stopImmediatePropagation(); // Tambahkan ini agar tidak bentrok
+
+    const formData = new FormData(loginForm);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+        const response = await fetch("{{ url_for('login_web') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json', // Pastikan kecil semua atau sesuai standar
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        // Cek jika response tipenya JSON
+        const result = await response.json();
+        
+        if (result.success) {
+            window.location.href = result.redirect;
+        } else {
+            alert(result.error || "Username/Password Salah!");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Gagal konek ke server!");
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Management</title>
+
+    <!-- Font sama dengan results.html -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+
+        .main-title {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .top-link {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-link a {
+            font-size: 14px;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .top-link a:hover {
+            text-decoration: underline;
+        }
+
+        .section-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #eee;
+        }
+
+        h2 {
+            color: #444;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            font-size: 1.1rem;
+            margin-top: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            color: white;
+            font-size: 12px;
+            font-family: 'Poppins', sans-serif;
+            transition: background 0.3s;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+        }
+
+        .btn-delete:hover {
+            background-color: #c82333;
+        }
+
+        .btn-add {
+            background-color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .btn-add:hover {
+            background-color: #218838;
+        }
+
+        .badge-info {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #495057;
+        }
+
+        .filter-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .filter-section select {
+            padding: 8px;
+            margin-right: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 12px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .pagination-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .btn-page {
+            padding: 4px 10px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            font-size: 12px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn-page:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .bottom-grid {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .bottom-grid .section-box {
+            flex: 1;
+            min-height: 400px;
+            position: relative;
+        }
+
+        /* Modals (Group/Class + Editor) */
+        #modalGroup,
+        #modalClass,
+        #modalEditor {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            width: 280px;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .modal-editor-content {
+            background: white;
+            width: 95%;
+            max-width: 1200px;
+            margin: 1% auto;
+            padding: 20px;
+            border-radius: 8px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .editor-layout {
+            display: flex;
+            flex: 1;
+            border: 1px solid #ddd;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .file-sidebar {
+            width: 320px;
+            background: #f1f3f5;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-controls {
+            padding: 10px;
+            background: #e9ecef;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .sidebar-controls input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 8px;
+            font-size: 11px;
+        }
+
+        #file-tree {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px;
+            text-align: left;
+        }
+
+        .file-item {
+            padding: 8px 10px;
+            cursor: pointer;
+            font-size: 11px;
+            border-bottom: 1px solid #dee2e6;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-item.active {
+            background: #007bff;
+            color: white;
+        }
+
+        #ace-editor {
+            flex: 1;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="top-link">
+        <a href="/">← Back to Scheme List</a>
+        <button class="btn" style="background:#17a2b8;" onclick="showScriptEditor()">Manage Scripts</button>
+    </div>
+
+    <h1 class="main-title">Admin Management</h1>
+
+    <!-- Data User -->
+    <div class="section-box">
+        <h2>Data User</h2>
+
+        <form class="filter-section" method="GET" action="/admin">
+            <div>
+                <label style="font-size: 11px; font-weight: bold;">Kelas</label><br>
+                <select name="class_name">
+                    <option value="">Semua</option>
+                    {% for c in classes %}
+                    <option value="{{c.class_name}}" {% if selected_class == c.class_name %}selected{% endif %}>
+                        {{c.class_name}}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label style="font-size: 11px; font-weight: bold;">Kelompok</label><br>
+                <select name="group_name">
+                    <option value="">Semua</option>
+                    {% for g in groups %}
+                    <option value="{{g.group_name}}" {% if selected_group == g.group_name %}selected{% endif %}>
+                        {{g.group_name}}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn" style="background:#007bff;">Filter</button>
+            <button type="button" class="btn" style="background:#6c757d;" onclick="window.location.href='/admin'">
+                Reset
+            </button>
+        </form>
+
+        <table>
+            <thead>
+            <tr>
+                <th>No</th>
+                <th>Nama</th>
+                <th>Username</th>
+                <th>Kelas</th>
+                <th>Kelompok</th>
+                <th>Email</th>
+                <th>No Telp</th>
+                <th>Aksi</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ ((page - 1) * 10) + loop.index }}</td>
+                <td><strong>{{ user.name }}</strong></td>
+                <td><span class="badge-info">{{ user.username }}</span></td>
+                <td>{{ user.class_name }}</td>
+                <td>{{ user.group_name if user.group_name else '-' }}</td>
+                <td style="font-size: 11px;">{{ user.email if user.email else '-' }}</td>
+                <td>{{ user.phone if user.phone else '-' }}</td>
+                <td>
+                    <button class="btn btn-delete" onclick="deleteUser('{{user.username}}')">Hapus</button>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            {% if page > 1 %}
+            <a href="/admin?page={{ page - 1 }}" class="btn-page">Prev</a>
+            {% endif %}
+            <span>{{ page }} / {{ total_pages }}</span>
+            {% if page < total_pages %}
+            <a href="/admin?page={{ page + 1 }}" class="btn-page">Next</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Data Kelas & Kelompok -->
+    <div class="bottom-grid">
+        <!-- Data Kelas -->
+        <div class="section-box">
+            <h2>Data Kelas</h2>
+
+            <button class="btn btn-add" onclick="showModal('modalClass')">+ Tambah</button>
+
+            <table id="tableClass">
+                <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama Kelas</th>
+                    <th>Aksi</th>
+                </tr>
+                </thead>
+                <tbody id="bodyClass">
+                {% for c in class_list %}
+                <tr>
+                    <td class="row-no">{{ loop.index }}</td>
+                    <td>{{ c.class_name }}</td>
+                    <td>
+                        <button class="btn btn-delete" onclick="deleteClass('{{c.class_name}}')">Hapus</button>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="pagination-container" id="pagingClass"></div>
+        </div>
+
+        <!-- Data Kelompok -->
+        <div class="section-box">
+            <h2>Data Kelompok</h2>
+
+            <button class="btn btn-add" onclick="showModal('modalGroup')">+ Tambah</button>
+
+            <table id="tableGroup">
+                <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama Kelompok</th>
+                    <th>Aksi</th>
+                </tr>
+                </thead>
+                <tbody id="bodyGroup">
+                {% for g in groups %}
+                <tr>
+                    <td class="row-no">{{ loop.index }}</td>
+                    <td>{{ g.group_name }}</td>
+                    <td>
+                        <button class="btn btn-delete" onclick="deleteGroup('{{g.group_name}}')">Hapus</button>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="pagination-container" id="pagingGroup"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editor -->
+<div id="modalEditor">
+    <div class="modal-editor-content">
+        <div class="editor-header">
+            <h3>Script Manager (/opt/grading)</h3>
+            <span id="file-path-display" style="font-size:12px; color:#007bff; font-weight:bold;"></span>
+        </div>
+
+        <div class="editor-layout">
+            <div class="file-sidebar">
+                <div class="sidebar-controls">
+                    <input type="text" id="fileSearch" placeholder="Cari file..." onkeyup="filterFiles()">
+                    <input type="text" id="newNodeName" placeholder="Nama file/folder baru...">
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn" style="background:#28a745; flex:1;" onclick="createNewNode('file')">
+                            New File
+                        </button>
+                        <button class="btn" style="background:#ffc107; flex:1; color:black;"
+                                onclick="createNewNode('folder')">
+                            New Folder
+                        </button>
+                    </div>
+                </div>
+
+                <div id="file-tree"></div>
+            </div>
+
+            <div id="ace-editor"></div>
+        </div>
+
+        <div style="margin-top:15px; text-align:right;">
+            <button class="btn" style="background:#6c757d;" onclick="hideModal('modalEditor')">Close</button>
+            <button class="btn" style="background:#28a745; margin-left:10px;" onclick="saveCurrentFile()">
+                Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modals Group & Class -->
+<div id="modalGroup">
+    <div class="modal-content">
+        <h3>Tambah Kelompok</h3>
+        <input type="text" id="newGroupName" style="width:90%; padding:8px; margin-bottom:15px;">
+        <button class="btn btn-add" style="width:100%;" onclick="submitGroup()">Simpan</button>
+        <p style="cursor:pointer; color:red; font-size:12px;" onclick="hideModal('modalGroup')">Batal</p>
+    </div>
+</div>
+
+<div id="modalClass">
+    <div class="modal-content">
+        <h3>Tambah Kelas</h3>
+        <input type="text" id="newClassName" style="width:90%; padding:8px; margin-bottom:15px;">
+        <button class="btn btn-add" style="width:100%;" onclick="submitClass()">Simpan</button>
+        <p style="cursor:pointer; color:red; font-size:12px;" onclick="hideModal('modalClass')">Batal</p>
+    </div>
+</div>
+
+<script>
+    // --- Script Editor (Ace) ---
+    var editor = ace.edit("ace-editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.session.setMode("ace/mode/python");
+
+    let activeFile = "";
+    let allFiles = [];
+
+    function showScriptEditor() {
+        showModal('modalEditor');
+        fetchFileList();
+    }
+
+    function fetchFileList() {
+        fetch('/list-files')
+            .then(r => r.json())
+            .then(files => {
+                allFiles = files;
+                renderFileList(files);
+            });
+    }
+
+    function renderFileList(files) {
+        const tree = document.getElementById('file-tree');
+        tree.innerHTML = files
+            .map(f => `<div class="file-item" onclick="loadFile('${f}', this)">${f}</div>`)
+            .join('');
+    }
+
+    function filterFiles() {
+        const query = document.getElementById('fileSearch').value.toLowerCase();
+        renderFileList(allFiles.filter(f => f.toLowerCase().includes(query)));
+    }
+
+    function createNewNode(type) {
+        const name = document.getElementById('newNodeName').value;
+        if (!name) return alert("Masukkan nama!");
+
+        fetch('/create-node', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name, type: type})
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    document.getElementById('newNodeName').value = '';
+                    fetchFileList();
+                } else {
+                    alert(d.error);
+                }
+            });
+    }
+
+    function loadFile(path, el) {
+        activeFile = path;
+        document.getElementById('file-path-display').innerText = path;
+        document.querySelectorAll('.file-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+
+        fetch(`/get-file-content?path=${path}`)
+            .then(r => r.json())
+            .then(d => {
+                editor.setValue(d.content, -1);
+                if (path.endsWith('.py')) editor.session.setMode("ace/mode/python");
+                else if (path.endsWith('.json')) editor.session.setMode("ace/mode/json");
+                else editor.session.setMode("ace/mode/html");
+            });
+    }
+
+    function saveCurrentFile() {
+        if (!activeFile) return;
+
+        fetch('/save-file-content', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({path: activeFile, content: editor.getValue()})
+        })
+            .then(r => r.json())
+            .then(d => alert(d.success ? "Saved" : "Error"));
+    }
+
+    // --- Pagination client-side untuk Kelas & Kelompok ---
+    function paginateTable(tbodyId, pagingId, rowsPerPage) {
+        const body = document.getElementById(tbodyId);
+        const paging = document.getElementById(pagingId);
+        const rows = Array.from(body.getElementsByTagName('tr'));
+
+        let currentPage = 1;
+        const totalPages = Math.ceil(rows.length / rowsPerPage) || 1;
+
+        function showPage(p) {
+            currentPage = p;
+            const start = (p - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+
+            rows.forEach((row, index) => {
+                row.style.display = (index >= start && index < end) ? '' : 'none';
+            });
+
+            renderControls();
+        }
+
+        function renderControls() {
+            paging.innerHTML = '';
+
+            // kalau cuma 1 halaman -> gausah tampil pagination sama sekali
+            if (totalPages <= 1) {
+                return;
+            }
+
+            // halaman > 1:
+            // kalau currentPage > 1 baru ada Previous
+            if (currentPage > 1) {
+                const prev = document.createElement('button');
+                prev.textContent = 'Previous';
+                prev.className = 'btn-page';
+                prev.onclick = () => showPage(currentPage - 1);
+                paging.appendChild(prev);
+            }
+
+            const span = document.createElement('span');
+            span.textContent = `${currentPage} / ${totalPages}`;
+            paging.appendChild(span);
+
+            // kalau currentPage < totalPages baru ada Next
+            if (currentPage < totalPages) {
+                const next = document.createElement('button');
+                next.textContent = 'Next';
+                next.className = 'btn-page';
+                next.onclick = () => showPage(currentPage + 1);
+                paging.appendChild(next);
+            }
+        }
+
+        showPage(1);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        paginateTable('bodyClass', 'pagingClass', 5);
+        paginateTable('bodyGroup', 'pagingGroup', 5);
+    });
+
+    // --- Modal & aksi CRUD sederhana ---
+    function showModal(id) {
+        document.getElementById(id).style.display = 'block';
+    }
+
+    function hideModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    function deleteUser(un) {
+        if (confirm("Hapus " + un + "?")) {
+            fetch('/delete_user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: un})
+            }).then(() => location.reload());
+        }
+    }
+
+    function submitGroup() {
+        const n = document.getElementById('newGroupName').value;
+        fetch('/add_group_db', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({group_name: n})
+        }).then(() => location.reload());
+    }
+
+    function deleteGroup(n) {
+        if (confirm("Hapus " + n + "?")) {
+            fetch('/delete_group', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({group_name: n})
+            }).then(() => location.reload());
+        }
+    }
+
+    function submitClass() {
+        const n = document.getElementById('newClassName').value;
+        fetch('/add_class_db', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({class_name: n})
+        }).then(() => location.reload());
+    }
+
+    function deleteClass(n) {
+        if (confirm("Hapus " + n + "?")) {
+            fetch('/delete_class', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({class_name: n})
+            }).then(() => location.reload());
+        }
+    }
+</script>
+</body>
+</html>

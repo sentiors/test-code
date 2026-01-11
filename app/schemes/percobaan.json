@@ -1,0 +1,22 @@
+{
+    "lab_id": "percobaan",
+    "grading_type": "kelompok",
+    "criteria": [
+        {
+            "type": "gmail_alert_email",
+            "key": "desember2025",
+            "expected": "exists",
+            "description": "pastikan user ada ya",
+            "score": 50.0,
+            "cleanup": false
+        },
+        {
+            "type": "gitlab_runner",
+            "key": "desdes",
+            "expected": "exists",
+            "description": "grading",
+            "score": 50.0,
+            "cleanup": false
+        }
+    ]
+}

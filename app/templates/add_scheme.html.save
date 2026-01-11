@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Scheme - GradingCTL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: all 0.3s ease; }
+        #sidebar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s; }
+        #main-content { transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-collapsed { width: 80px !important; padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+        .sidebar-collapsed .nav-text, .sidebar-collapsed .sidebar-header-text, .sidebar-collapsed .admin-text { display: none; }
+        .sidebar-collapsed .nav-item { justify-content: center !important; padding-left: 0 !important; }
+        .sidebar-collapsed .nav-item i { margin-right: 0 !important; }
+        .sidebar-active-indicator { position: absolute; left: 0; width: 4px; height: 20px; background-color: white; border-radius: 0 4px 4px 0; }
+        .premium-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12), 0 12px 20px -5px rgba(0, 0, 0, 0.08); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 overflow-x-hidden">
+
+    <aside id="sidebar" class="fixed left-3 top-3 bottom-3 w-64 bg-black rounded-[1.5rem] flex flex-col p-4 text-white shadow-xl z-50 overflow-hidden">
+        <div class="px-3 py-4 flex items-center justify-between">
+            <h1 class="text-xl font-bold tracking-tight sidebar-header-text">GradingCTL</h1>
+            <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-800 rounded-lg transition-colors flex items-center justify-center">
+                <i data-lucide="menu" class="w-5 h-5 text-white"></i>
+            </button>
+        </div>
+
+        <div class="w-full h-[1px] bg-gray-800 mb-6"></div>
+
+        <div class="px-3 mb-6 flex items-center gap-3 admin-container">
+            <div class="w-10 h-10 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center">
+                <i data-lucide="user" class="w-5 h-5 text-gray-300"></i>
+            </div>
+            <span class="font-medium text-base admin-text">Admin</span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <nav class="space-y-1">
+                <a href="/dashboard" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="layout-dashboard" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Dashboard</span>
+                </a>
+                <a href="/" class="nav-item group flex items-center px-3 py-2.5 text-white relative bg-gray-900 rounded-xl transition-all">
+                    <div class="sidebar-active-indicator"></div>
+                    <i data-lucide="list" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Scheme List</span>
+                </a>
+                <a href="/results" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="file-text" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Grading Result</span>
+                </a>
+                <a href="/admin" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="settings" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Management</span>
+                </a>
+            </nav>
+
+            <div class="px-3 my-4"><div class="w-full h-[1px] bg-gray-800"></div></div>
+
+            <a href="/logout" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-red-400 hover:bg-gray-900 rounded-xl transition-all">
+                <i data-lucide="log-out" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="text-sm nav-text">Log Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <main id="main-content" class="ml-64 p-8 min-h-screen flex justify-center">
+        <div class="max-w-5xl w-full">
+            <header class="mb-6">
+                <div class="flex items-center gap-4 mb-2">
+                    <a href="/" class="p-2.5 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-500 hover:text-black transition-all">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Add New Scheme</h1>
+                        <p class="text-gray-500 text-base">Define new criteria for your lab session</p>
+                    </div>
+                </div>
+                <div class="w-full h-1 bg-gray-200 mt-4 rounded-full"></div>
+            </header>
+
+            <form id="addForm">
+                <div class="bg-white rounded-[2rem] premium-shadow border border-gray-100 p-8 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Lab ID</label>
+                            <input type="text" id="lab_id" placeholder="e.g. lab-linux-01" class="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-gray-800 font-semibold outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all" required>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Grading Type</label>
+                            <select id="grading_type" class="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all cursor-pointer text-base">
+                                <option value="kelompok">Kelompok</option>
+                                <option value="individu">Individu</option>
+                                <option value="individu_per_kelompok">Individu per Kelompok</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-[2rem] premium-shadow border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                        <h3 class="font-bold text-lg text-gray-800">Criteria List</h3>
+                        
+                            <i data-lucide="plus" class="w-5 h-5"></i> Add New Criterion
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                                    <th class="px-6 py-5 text-center">Clear</th>
+                                    <th class="px-6 py-5">Type</th>
+                                    <th class="px-6 py-5">Key / Variable</th>
+                                    <th class="px-6 py-5">Expected</th>
+                                    <th class="px-6 py-5">Description</th>
+                                    <th class="px-6 py-5">Score</th>
+                                    <th class="px-6 py-5 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="criteria-container" class="divide-y divide-gray-50">
+                                <tr class="criterion-row hover:bg-gray-50/30 transition-colors">
+                                    <td class="px-4 py-6 text-center">
+                                        <input type="checkbox" name="cleanup" class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    </td>
+                                    <td class="px-4 py-6 min-w-[140px]">
+                                        <select name="type" required onchange="updateExpected(this)" class="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold outline-none focus:border-blue-500 w-full shadow-sm">
+                                            {% for type in types %}
+                                                <option value="{{ type }}">{{ type }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td class="px-4 py-6">
+                                        <input type="text" name="key" placeholder="Resource name" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 shadow-sm">
+                                    </td>
+                                    <td class="px-4 py-6 min-w-[140px]">
+                                        <select name="expected" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold outline-none focus:border-blue-500 shadow-sm">
+                                            {% for exp in expected[types[0]] %}
+                                                <option value="{{ exp }}">{{ exp }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td class="px-4 py-6">
+                                        <input type="text" name="description" placeholder="Feedback msg" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 shadow-sm">
+                                    </td>
+                                    <td class="px-4 py-6">
+                                        <input type="number" step="0.1" name="score" placeholder="0" required class="w-24 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-blue-500 shadow-sm">
+                                    </td>
+                                    <td class="px-4 py-6 text-center">
+                                        <button type="button" onclick="removeRow(this)" class="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-8 mb-12 flex justify-end">
+                    <button type="submit" class="bg-green-600 text-white px-12 py-4 rounded-2xl text-base font-bold hover:bg-green-700 transition-all shadow-xl shadow-green-200 flex items-center gap-3 tracking-wide">
+                        <i data-lucide="save" class="w-6 h-6"></i>
+                        SAVE NEW SCHEME
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        const expectedOptions = { {% for type in types %} "{{ type }}": {{ expected[type] | tojson }},{% endfor %} };
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            sidebar.classList.toggle('sidebar-collapsed');
+            mainContent.style.marginLeft = sidebar.classList.contains('sidebar-collapsed') ? "85px" : "256px";
+        }
+
+        function updateExpected(select) {
+            const selectedType = select.value;
+            const expectedSelect = select.closest('tr').querySelector('select[name="expected"]');
+            expectedSelect.innerHTML = '';
+            if (expectedOptions[selectedType]) {
+                expectedOptions[selectedType].forEach(exp => {
+                    const opt = document.createElement('option');
+                    opt.value = exp; opt.textContent = exp;
+                    expectedSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function addCriterion() {
+            const container = document.getElementById('criteria-container');
+            const rows = container.querySelectorAll('.criterion-row');
+            if (rows.length === 0) return;
+
+            const newRow = rows[0].cloneNode(true);
+            newRow.querySelectorAll('input').forEach(input => {
+                if(input.type !== 'checkbox') input.value = '';
+                else input.checked = false;
+            });
+            container.appendChild(newRow);
+            lucide.createIcons();
+        }
+
+        function removeRow(button) {
+            if (document.querySelectorAll('.criterion-row').length > 1) {
+                button.closest('tr').remove();
+            } else {
+                alert("At least one criterion is required.");
+            }
+        }
+
+        document.getElementById('addForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const criteria = [];
+            let totalScore = 0;
+            document.querySelectorAll('.criterion-row').forEach(row => {
+                const s = parseFloat(row.querySelector('input[name="score"]').value) || 0;
+                totalScore += s;
+                criteria.push({
+                    type: row.querySelector('select[name="type"]').value,
+                    key: row.querySelector('input[name="key"]').value,
+                    expected: row.querySelector('select[name="expected"]').value,
+                    description: row.querySelector('input[name="description"]').value,
+                    score: s,
+                    cleanup: row.querySelector('input[name="cleanup"]').checked
+                });
+            });
+
+            if(totalScore !== 100) {
+                if(!confirm("Total score is " + totalScore + ", not 100. Save anyway?")) return;
+            }
+
+            fetch('/create_scheme', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lab_id: document.getElementById('lab_id').value,
+                    grading_type: document.getElementById('grading_type').value,
+                    criteria: criteria
+                })
+            }).then(r => r.json()).then(res => {
+                if(res.error) alert(res.error);
+                else window.location.href = '/';
+            });
+        });
+    </script>
+</body>
+</html>

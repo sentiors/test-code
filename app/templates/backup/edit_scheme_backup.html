@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Scheme</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; text-align: center; }
+        .container { max-width: 900px; margin: 50px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: left; }
+        h2 { font-weight: 600; color: #333; margin-bottom: 25px; text-align: center; }
+        
+        .header-row { display: flex; gap: 15px; margin-bottom: 20px; }
+        .header-row > div { flex: 1; }
+
+        .criterion-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 15px; padding: 10px; border-bottom: 1px solid #eee; }
+        .criterion-row select, .criterion-row input { padding: 8px; border-radius: 4px; border: 1px solid #ddd; font-size: 13px; }
+        .btn { display: inline-block; padding: 8px 16px; font-size: 14px; border-radius: 4px; border: none; cursor: pointer; text-decoration: none; color: #fff; transition: background 0.3s; }
+        .btn-remove { background-color: #dc3545; }
+        .btn-add { background-color: #007bff; margin-bottom: 20px; }
+        .btn-save { background-color: #28a745; width: 100%; font-weight: bold; padding: 12px; margin-top: 10px; }
+        .form-label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px; }
+        .form-control { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+        h4 { margin-bottom: 15px; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 15px;">
+            <a href="/" style="text-decoration: none; color: #007bff; font-size: 14px;">← Back to List</a>
+        </div>
+        
+        <h1>Edit Scheme: {{ scheme.lab_id }}</h1>
+
+        <form id="editForm">
+            <div class="header-row">
+                <div>
+                    <label class="form-label">Lab ID (Read Only)</label>
+                    <input type="text" class="form-control" value="{{ scheme.lab_id }}" disabled style="background-color: #e9ecef;">
+                </div>
+                <div>
+                    <label class="form-label">Grading Type</label>
+                    <select id="grading_type" class="form-control">
+                        <option value="kelompok" {% if scheme.grading_type == 'kelompok' %}selected{% endif %}>Kelompok</option>
+                        <option value="individu" {% if scheme.grading_type == 'individu' %}selected{% endif %}>Individu</option>
+                        <option value="individu_per_kelompok" {% if scheme.grading_type == 'individu_per_kelompok' %}selected{% endif %}>Individu per Kelompok</option>
+                    </select>
+                </div>
+            </div>
+
+            <hr>
+            <h4>Criteria List</h4>
+            <div id="criteria-container">
+                {% for criterion in scheme.criteria %}
+                <div class="criterion-row">
+                    <input type="checkbox" name="cleanup" {% if criterion.cleanup %}checked{% endif %}> <label style="font-size: 13px;">clear</label>
+                    <select name="type" required onchange="updateExpected(this)">
+                        {% for type in types %}
+                            <option value="{{ type }}" {% if type == criterion.type %}selected{% endif %}>{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="key" value="{{ criterion.key }}" style="flex: 2;" required>
+                    <select name="expected" required style="flex: 1;">
+                        {% for exp in expected[criterion.type] %}
+                            <option value="{{ exp }}" {% if exp == criterion.expected %}selected{% endif %}>{{ exp }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="description" value="{{ criterion.description }}" style="flex: 2;" required>
+                    <input type="number" name="score" value="{{ criterion.score }}" style="width: 70px;" required>
+                    <button type="button" class="btn btn-remove" onclick="removeRow(this)">Remove</button>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button type="button" class="btn btn-add" onclick="addCriterion()">+ Add Criterion</button>
+            <button type="submit" class="btn btn-save">UPDATE SCHEME</button>
+        </form>
+    </div>
+
+    <script>
+        const expectedOptions = { {% for type in types %} "{{ type }}": {{ expected[type] | tojson }},{% endfor %} };
+
+        function updateExpected(select) {
+            const selectedType = select.value;
+            const expectedSelect = select.parentElement.querySelector('select[name="expected"]');
+            expectedSelect.innerHTML = '';
+            if (expectedOptions[selectedType]) {
+                expectedOptions[selectedType].forEach(function(exp) {
+                    const opt = document.createElement('option');
+                    opt.value = exp; opt.textContent = exp;
+                    expectedSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function addCriterion() {
+            const container = document.getElementById('criteria-container');
+            const row = container.children[0].cloneNode(true);
+            row.querySelectorAll('input').forEach(input => { 
+                if(input.type !== 'checkbox') input.value = ''; 
+                else input.checked = false; 
+            });
+            container.appendChild(row);
+        }
+
+        function removeRow(button) {
+            if (document.querySelectorAll('.criterion-row').length > 1) button.parentElement.remove();
+        }
+
+        document.getElementById('editForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const criteria = [];
+            document.querySelectorAll('.criterion-row').forEach(row => {
+                criteria.push({
+                    type: row.querySelector('select[name="type"]').value,
+                    key: row.querySelector('input[name="key"]').value,
+                    expected: row.querySelector('select[name="expected"]').value,
+                    description: row.querySelector('input[name="description"]').value,
+                    score: parseFloat(row.querySelector('input[name="score"]').value) || 0,
+                    cleanup: row.querySelector('input[name="cleanup"]').checked
+                });
+            });
+
+            fetch('/edit_scheme/{{ scheme.lab_id }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    grading_type: document.getElementById('grading_type').value,
+                    criteria: criteria
+                })
+            }).then(r => r.json()).then(res => {
+                alert(res.message || res.error);
+                if(!res.error) window.location.href = '/';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -3,696 +3,662 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Management</title>
-
-    <!-- Font sama dengan results.html -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Admin Management - GradingCTL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
-
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-            text-align: center;
-        }
+body {
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s ease;
+}
 
-        .main-title {
-            text-align: center;
-            color: #333;
-            margin-top: 20px;
-            margin-bottom: 30px;
-            font-weight: 600;
-        }
+#sidebar {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.3s;
+}
 
-        .container {
-            max-width: 900px;
-            margin: 50px auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: left;
-        }
+#main-content {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-        .top-link {
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+/* ========================= */
+/* SIDEBAR COLLAPSED */
+/* ========================= */
+.sidebar-collapsed {
+    width: 80px !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
 
-        .top-link a {
-            font-size: 14px;
-            color: #007bff;
-            text-decoration: none;
-        }
+/* sembunyiin teks */
+.sidebar-collapsed .nav-text,
+.sidebar-collapsed .sidebar-header-text,
+.sidebar-collapsed .admin-text {
+    display: none !important;
+}
 
-        .top-link a:hover {
-            text-decoration: underline;
-        }
+/* nav item tetap horizontal */
+.sidebar-collapsed .nav-item {
+    justify-content: flex-start !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
 
-        .section-box {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border: 1px solid #eee;
-        }
+/* margin icon tetap rapi */
+.sidebar-collapsed .nav-item i {
+    margin-right: 0 !important;
+}
 
-        h2 {
-            color: #444;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 10px;
-            font-size: 1.1rem;
-            margin-top: 0;
-        }
+/* header (☰) biar nggak aneh */
+.sidebar-collapsed .px-3.py-4 {
+    justify-content: center;
+}
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 13px;
-        }
+/* admin avatar */
+.sidebar-collapsed .admin-container {
+    justify-content: center;
+}
 
-        th,
-        td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
+/* ========================= */
+/* ACTIVE INDICATOR */
+/* ========================= */
+.sidebar-active-indicator {
+    position: absolute;
+    left: 0;
+    width: 4px;
+    height: 20px;
+    background-color: white;
+    border-radius: 0 4px 4px 0;
+}
 
-        th {
-            background-color: #007bff;
-            color: white;
-        }
+/* ❌ HILANG SAAT COLLAPSE */
+.sidebar-collapsed .sidebar-active-indicator {
+    display: none !important;
+}
+        .premium-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12), 0 12px 20px -5px rgba(0, 0, 0, 0.08); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1rem; }
 
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            color: white;
-            font-size: 12px;
-            font-family: 'Poppins', sans-serif;
-            transition: background 0.3s;
-        }
-
-        .btn-delete {
-            background-color: #dc3545;
-        }
-
-        .btn-delete:hover {
-            background-color: #c82333;
-        }
-
-        .btn-add {
-            background-color: #28a745;
-            margin-bottom: 15px;
-        }
-
-        .btn-add:hover {
-            background-color: #218838;
-        }
-
-        .badge-info {
-            background: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 6px;
-            font-size: 11px;
-            color: #495057;
-        }
-
-        .filter-section {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: flex-end;
-            margin-bottom: 15px;
-        }
-
-        .filter-section select {
-            padding: 8px;
-            margin-right: 10px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            font-size: 12px;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .pagination-container {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-        }
-
-        .btn-page {
-            padding: 4px 10px;
-            background-color: #007bff;
-            color: white;
-            border-radius: 4px;
-            cursor: pointer;
-            border: none;
-            font-size: 12px;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .btn-page:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        .bottom-grid {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-        }
-
-        .bottom-grid .section-box {
-            flex: 1;
-            min-height: 400px;
-            position: relative;
-        }
-
-        /* Modals (Group/Class + Editor) */
-        #modalGroup,
-        #modalClass,
-        #modalEditor {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: white;
-            width: 280px;
-            margin: 15% auto;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .modal-editor-content {
-            background: white;
-            width: 95%;
-            max-width: 1200px;
-            margin: 1% auto;
-            padding: 20px;
-            border-radius: 8px;
-            height: 90vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .editor-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .editor-layout {
-            display: flex;
-            flex: 1;
-            border: 1px solid #ddd;
-            overflow: hidden;
-            background: #fff;
-        }
-
-        .file-sidebar {
-            width: 320px;
-            background: #f1f3f5;
-            border-right: 1px solid #ddd;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-controls {
-            padding: 10px;
-            background: #e9ecef;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .sidebar-controls input {
-            width: 100%;
-            padding: 6px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            margin-bottom: 8px;
-            font-size: 11px;
-        }
-
-        #file-tree {
-            flex: 1;
-            overflow-y: auto;
-            padding: 5px;
-            text-align: left;
-        }
-
-        .file-item {
-            padding: 8px 10px;
-            cursor: pointer;
-            font-size: 11px;
-            border-bottom: 1px solid #dee2e6;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .file-item.active {
-            background: #007bff;
-            color: white;
-        }
-
-        #ace-editor {
-            flex: 1;
-            height: 100%;
-        }
+        /* Modal Animation & Styling */
+        .modal-anim { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        #ace-editor { border-radius: 0 0 1rem 0; height: 100%; }
     </style>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-900 overflow-x-hidden">
 
-<div class="container">
-    <div class="top-link">
-        <a href="/">← Back to Scheme List</a>
-        <button class="btn" style="background:#17a2b8;" onclick="showScriptEditor()">Manage Scripts</button>
-    </div>
-
-    <h1 class="main-title">Admin Management</h1>
-
-    <!-- Data User -->
-    <div class="section-box">
-        <h2>Data User</h2>
-
-        <form class="filter-section" method="GET" action="/admin">
-            <div>
-                <label style="font-size: 11px; font-weight: bold;">Kelas</label><br>
-                <select name="class_name">
-                    <option value="">Semua</option>
-                    {% for c in classes %}
-                    <option value="{{c.class_name}}" {% if selected_class == c.class_name %}selected{% endif %}>
-                        {{c.class_name}}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label style="font-size: 11px; font-weight: bold;">Kelompok</label><br>
-                <select name="group_name">
-                    <option value="">Semua</option>
-                    {% for g in groups %}
-                    <option value="{{g.group_name}}" {% if selected_group == g.group_name %}selected{% endif %}>
-                        {{g.group_name}}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <button type="submit" class="btn" style="background:#007bff;">Filter</button>
-            <button type="button" class="btn" style="background:#6c757d;" onclick="window.location.href='/admin'">
-                Reset
+    <aside id="sidebar" class="fixed left-3 top-3 bottom-3 w-64 bg-black rounded-[1.5rem] flex flex-col p-4 text-white shadow-xl z-50 overflow-hidden">
+        <div class="px-3 py-4 flex items-center justify-between">
+            <h1 class="text-xl font-bold tracking-tight sidebar-header-text">GradingCTL</h1>
+            <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-800 rounded-lg transition-colors flex items-center justify-center">
+                <i data-lucide="menu" class="w-5 h-5 text-white"></i>
             </button>
-        </form>
-
-        <table>
-            <thead>
-            <tr>
-                <th>No</th>
-                <th>Nama</th>
-                <th>Username</th>
-                <th>Kelas</th>
-                <th>Kelompok</th>
-                <th>Email</th>
-                <th>No Telp</th>
-                <th>Aksi</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for user in users %}
-            <tr>
-                <td>{{ ((page - 1) * 10) + loop.index }}</td>
-                <td><strong>{{ user.name }}</strong></td>
-                <td><span class="badge-info">{{ user.username }}</span></td>
-                <td>{{ user.class_name }}</td>
-                <td>{{ user.group_name if user.group_name else '-' }}</td>
-                <td style="font-size: 11px;">{{ user.email if user.email else '-' }}</td>
-                <td>{{ user.phone if user.phone else '-' }}</td>
-                <td>
-                    <button class="btn btn-delete" onclick="deleteUser('{{user.username}}')">Hapus</button>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-
-        <div class="pagination-container">
-            {% if page > 1 %}
-            <a href="/admin?page={{ page - 1 }}" class="btn-page">Prev</a>
-            {% endif %}
-            <span>{{ page }} / {{ total_pages }}</span>
-            {% if page < total_pages %}
-            <a href="/admin?page={{ page + 1 }}" class="btn-page">Next</a>
-            {% endif %}
         </div>
-    </div>
-
-    <!-- Data Kelas & Kelompok -->
-    <div class="bottom-grid">
-        <!-- Data Kelas -->
-        <div class="section-box">
-            <h2>Data Kelas</h2>
-
-            <button class="btn btn-add" onclick="showModal('modalClass')">+ Tambah</button>
-
-            <table id="tableClass">
-                <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Nama Kelas</th>
-                    <th>Aksi</th>
-                </tr>
-                </thead>
-                <tbody id="bodyClass">
-                {% for c in class_list %}
-                <tr>
-                    <td class="row-no">{{ loop.index }}</td>
-                    <td>{{ c.class_name }}</td>
-                    <td>
-                        <button class="btn btn-delete" onclick="deleteClass('{{c.class_name}}')">Hapus</button>
-                    </td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-
-            <div class="pagination-container" id="pagingClass"></div>
+        <div class="w-full h-[1px] bg-gray-800 mb-6"></div>
+        <div class="px-3 mb-6 flex items-center gap-3 admin-container">
+            <div class="w-10 h-10 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center">
+                <i data-lucide="user" class="w-5 h-5 text-gray-300"></i>
+            </div>
+            <span class="font-medium text-base admin-text">Admin</span>
         </div>
-
-        <!-- Data Kelompok -->
-        <div class="section-box">
-            <h2>Data Kelompok</h2>
-
-            <button class="btn btn-add" onclick="showModal('modalGroup')">+ Tambah</button>
-
-            <table id="tableGroup">
-                <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Nama Kelompok</th>
-                    <th>Aksi</th>
-                </tr>
-                </thead>
-                <tbody id="bodyGroup">
-                {% for g in groups %}
-                <tr>
-                    <td class="row-no">{{ loop.index }}</td>
-                    <td>{{ g.group_name }}</td>
-                    <td>
-                        <button class="btn btn-delete" onclick="deleteGroup('{{g.group_name}}')">Hapus</button>
-                    </td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-
-            <div class="pagination-container" id="pagingGroup"></div>
+        <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <nav class="space-y-1">
+                <a href="/" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="layout-dashboard" class="mr-3 w-5 h-5 flex-shrink-0"></i><span class="text-sm nav-text">Dashboard</span>
+                </a>
+                <a href="/schemes" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="list" class="mr-3 w-5 h-5 flex-shrink-0"></i><span class="text-sm nav-text">Scheme List</span>
+                </a>
+                <a href="/results" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="file-text" class="mr-3 w-5 h-5 flex-shrink-0"></i><span class="text-sm nav-text">Grading Result</span>
+                </a>
+                <a href="/admin" class="nav-item group flex items-center px-3 py-2.5 text-white relative bg-gray-900 rounded-xl transition-all">
+                    <div class="sidebar-active-indicator"></div><i data-lucide="settings" class="mr-3 w-5 h-5 flex-shrink-0"></i><span class="text-sm nav-text">Management</span>
+                </a>
+            </nav>
+            <div class="px-3 my-4"><div class="w-full h-[1px] bg-gray-800"></div></div>
+            <a href="/logout" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-red-400 hover:bg-gray-900 rounded-xl transition-all">
+                <i data-lucide="log-out" class="mr-3 w-5 h-5 flex-shrink-0"></i><span class="text-sm nav-text">Log Out</span>
+            </a>
         </div>
-    </div>
-</div>
+    </aside>
 
-<!-- Modal Editor -->
-<div id="modalEditor">
-    <div class="modal-editor-content">
-        <div class="editor-header">
-            <h3>Script Manager (/opt/grading)</h3>
-            <span id="file-path-display" style="font-size:12px; color:#007bff; font-weight:bold;"></span>
-        </div>
+    <main id="main-content" class="ml-64 p-8 min-h-screen flex justify-center">
+        <div class="max-w-5xl w-full">
+            <header class="mb-8">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Admin Management</h1>
+                        <p class="text-gray-500">Manage users, classes, groups, and system scripts</p>
+                    </div>
+                    <button onclick="showScriptEditor()" class="bg-cyan-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-cyan-700 transition-all flex items-center gap-2 shadow-lg shadow-cyan-100 uppercase tracking-wide">
+                        <i data-lucide="code" class="w-4 h-4"></i>Manage Scripts
+                    </button>
+                </div>
+                <div class="w-full h-1 bg-gray-200 mt-4 rounded-full"></div>
+            </header>
 
-        <div class="editor-layout">
-            <div class="file-sidebar">
-                <div class="sidebar-controls">
-                    <input type="text" id="fileSearch" placeholder="Cari file..." onkeyup="filterFiles()">
-                    <input type="text" id="newNodeName" placeholder="Nama file/folder baru...">
-                    <div style="display:flex; gap:5px;">
-                        <button class="btn" style="background:#28a745; flex:1;" onclick="createNewNode('file')">
-                            New File
+            <div class="mb-8 flex justify-end">
+                <form method="GET" action="/admin" class="flex items-center gap-3 bg-gray-50 px-6 py-3 rounded-xl border border-gray-200">
+                    <span class="text-sm font-medium text-gray-600">Filter:</span>
+                    <select name="class_name" class="bg-white border rounded-lg px-3 py-2 text-sm">
+                        <option value="">All Classes</option>
+                        {% for c in classes %}
+                        <option value="{{c.class_name}}" {% if selected_class == c.class_name %}selected{% endif %}>{{c.class_name}}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="group_name" class="bg-white border rounded-lg px-3 py-2 text-sm">
+                        <option value="">All Groups</option>
+                        {% for g in groups %}
+                        <option value="{{g.group_name}}" {% if selected_group == g.group_name %}selected{% endif %}>{{g.group_name}}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="bg-black text-white px-4 py-2 rounded-xl text-sm font-bold">Filter</button>
+                    <a href="/admin" class="p-2 bg-gray-100 rounded-xl">
+                        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                    </a>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-[2rem] premium-shadow border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-100">
+                                <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Student Info</th>
+                                <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Class</th>
+                                <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Group</th>
+                                <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Contact</th>
+                                <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            {% for user in users %}
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <td class="px-6 py-5">
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-gray-900 text-sm">{{ user.name }}</span>
+                                        <span class="text-xs text-gray-400 font-medium uppercase tracking-wider">{{ user.username }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-5 text-center">
+                                    <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[14px] font-bold border border-blue-100">{{ user.class_name }}</span>
+                                </td>
+                                <td class="px-6 py-5 text-center">
+                                    <span class="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-[14px] font-bold border border-purple-100">{{ user.group_name or 'N/A' }}</span>
+                                </td>
+                                <td class="px-6 py-5">
+                                    <div class="flex flex-col">
+                                        <span class="text-[14px] font-semibold text-gray-600">{{ user.email or '-' }}</span>
+                                        <span class="text-[12px] text-gray-400 font-bold uppercase tracking-tighter">{{ user.phone or '' }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-5 text-center">
+                                    <button onclick="deleteUser('{{user.username}}')" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                                        <i data-lucide="user-minus" class="w-5 h-5"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="px-8 py-20 text-center text-gray-300">
+                                    <i data-lucide="users" class="w-16 h-16 mb-4 mx-auto opacity-20"></i>
+                                    <p class="text-lg italic font-medium">No users found matching your criteria.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="px-8 py-6 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Page {{ page }} of {{ total_pages }}</span>
+                    <div class="flex gap-2">
+                        {% if page > 1 %}
+                        <a href="/admin?page={{ page - 1 }}{% if selected_class %}&class_name={{ selected_class }}{% endif %}{% if selected_group %}&group_name={{ selected_group }}{% endif %}" class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-all">Previous</a>
+                        {% endif %}
+                        {% if page < total_pages %}
+                        <a href="/admin?page={{ page + 1 }}{% if selected_class %}&class_name={{ selected_class }}{% endif %}{% if selected_group %}&group_name={{ selected_group }}{% endif %}" class="px-4 py-2 bg-black text-white rounded-xl text-xs font-bold hover:bg-gray-800 transition-all">Next</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="layers" class="w-5 h-5 text-blue-500"></i>Class List
+                        </h3>
+                        <button onclick="showModal('modalClass')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100 uppercase tracking-wide">
+                            <i data-lucide="plus" class="w-4 h-4"></i>Add
                         </button>
-                        <button class="btn" style="background:#ffc107; flex:1; color:black;"
-                                onclick="createNewNode('folder')">
-                            New Folder
-                        </button>
+                    </div>
+                    <div class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                        {% for c in class_list %}
+                        <div class="flex items-center justify-between p-4 bg-gray-50/50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+                            <span class="font-semibold text-sm text-gray-800">{{ c.class_name }}</span>
+                            <button onclick="deleteClass('{{c.class_name}}')" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
 
-                <div id="file-tree"></div>
+                <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="users" class="w-5 h-5 text-purple-500"></i>Group List
+                        </h3>
+                        <button onclick="showModal('modalGroup')" class="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-purple-700 transition-all flex items-center gap-2 shadow-lg shadow-purple-100 uppercase tracking-wide">
+                            <i data-lucide="plus" class="w-4 h-4"></i>Add
+                        </button>
+                    </div>
+                    <div class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                        {% for g in groups %}
+                        <div class="flex items-center justify-between p-4 bg-gray-50/50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+                            <span class="font-semibold text-sm text-gray-800">{{ g.group_name }}</span>
+                            <button onclick="deleteGroup('{{g.group_name}}')" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
-
-            <div id="ace-editor"></div>
         </div>
+    </main>
 
-        <div style="margin-top:15px; text-align:right;">
-            <button class="btn" style="background:#6c757d;" onclick="hideModal('modalEditor')">Close</button>
-            <button class="btn" style="background:#28a745; margin-left:10px;" onclick="saveCurrentFile()">
-                Save Changes
-            </button>
+<div id="modalClass" class="hidden fixed inset-0 bg-black/60 z-[1000] backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2rem] p-5 max-w-[320px] w-full shadow-2xl modal-anim overflow-hidden text-center border border-gray-100">
+        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="layers" class="w-5 h-5"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 leading-tight">Add New Class</h3>
+        <p class="text-[11px] text-gray-500 mb-5">Enter class name to register</p>
+
+        <input type="text" id="newClassName" placeholder="e.g. SIJA 1"
+            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-center text-base font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent outline-none transition-all mb-5">
+
+        <div class="flex gap-2">
+            <button onclick="hideModal('modalClass')" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-all">Cancel</button>
+            <button onclick="submitClass()" class="flex-1 py-2.5 bg-black text-white rounded-xl text-xs font-bold hover:bg-gray-800 shadow-lg transition-all">Save Class</button>
         </div>
     </div>
 </div>
 
-<!-- Modals Group & Class -->
-<div id="modalGroup">
-    <div class="modal-content">
-        <h3>Tambah Kelompok</h3>
-        <input type="text" id="newGroupName" style="width:90%; padding:8px; margin-bottom:15px;">
-        <button class="btn btn-add" style="width:100%;" onclick="submitGroup()">Simpan</button>
-        <p style="cursor:pointer; color:red; font-size:12px;" onclick="hideModal('modalGroup')">Batal</p>
+<div id="modalGroup" class="hidden fixed inset-0 bg-black/60 z-[1000] backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2rem] p-5 max-w-[320px] w-full shadow-2xl modal-anim overflow-hidden text-center border border-gray-100">
+        <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="users" class="w-5 h-5"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 leading-tight">Add New Group</h3>
+        <p class="text-[11px] text-gray-500 mb-5">Enter group identifier</p>
+
+        <input type="text" id="newGroupName" placeholder="e.g. Group 1"
+            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-center text-base font-semibold focus:ring-2 focus:ring-purple-500 focus:bg-white focus:border-transparent outline-none transition-all mb-5">
+
+        <div class="flex gap-2">
+            <button onclick="hideModal('modalGroup')" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-all">Cancel</button>
+            <button onclick="submitGroup()" class="flex-1 py-2.5 bg-black text-white rounded-xl text-xs font-bold hover:bg-gray-800 shadow-lg transition-all">Save Group</button>
+        </div>
     </div>
 </div>
 
-<div id="modalClass">
-    <div class="modal-content">
-        <h3>Tambah Kelas</h3>
-        <input type="text" id="newClassName" style="width:90%; padding:8px; margin-bottom:15px;">
-        <button class="btn btn-add" style="width:100%;" onclick="submitClass()">Simpan</button>
-        <p style="cursor:pointer; color:red; font-size:12px;" onclick="hideModal('modalClass')">Batal</p>
+    <div id="editorModal" class="hidden fixed inset-0 bg-black/60 z-[2000] backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden modal-anim">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <i data-lucide="file-code" class="text-cyan-600 w-5 h-5"></i> System File Editor
+                        <span id="unsavedBadge" class="hidden text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">(UNSAVED)</span>
+                    </h3>
+                    <p id="currentFilePath" class="text-xs text-gray-500 font-mono">No file selected</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="saveFile()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-100">
+                        <i data-lucide="save" class="w-4 h-4"></i> SAVE CHANGES
+                    </button>
+                    <button onclick="closeScriptEditor()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded-xl text-xs font-bold">CLOSE</button>
+                </div>
+            </div>
+            <div class="flex flex-1 overflow-hidden">
+                <div class="w-64 border-r bg-gray-50 flex flex-col overflow-hidden" id="fileList">
+                    <div class="p-3 border-b space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Explorer</span>
+                            <div class="flex gap-1">
+                                <button onclick="createNewNode('file')" title="New File" class="p-1 hover:bg-gray-200 rounded text-gray-600"><i data-lucide="file-plus" class="w-3.5 h-3.5"></i></button>
+                                <button onclick="createNewNode('folder')" title="New Folder" class="p-1 hover:bg-gray-200 rounded text-gray-600"><i data-lucide="folder-plus" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-gray-400"></i>
+                            <input type="text" id="fileSearch" onkeyup="filterFiles()" placeholder="Search files..." class="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg focus:ring-1 focus:ring-cyan-500 outline-none">
+                        </div>
+                    </div>
+                    <div id="filesContainer" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar"></div>
+                </div>
+                <div class="flex-1 relative">
+                    <div id="ace-editor" class="absolute inset-0 w-full h-full"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<div id="customModal" class="fixed inset-0 z-[3000] hidden flex items-center justify-center p-4 overflow-x-hidden overflow-y-auto bg-black/60 backdrop-blur-sm">
+    <div class="relative bg-white rounded-[2rem] p-5 w-full max-w-[320px] shadow-2xl modal-enter border border-gray-100 text-center">
+        <div id="modalIconBg" class="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <i id="modalIcon" data-lucide="alert-circle" class="w-5 h-5"></i>
+        </div>
+        <h3 id="modalTitle" class="text-lg font-bold text-gray-900 leading-tight mb-1">Notice</h3>
+        <p id="modalMessage" class="text-[11px] text-gray-500 mb-5 leading-relaxed"></p>
+        <div id="modalFooter" class="flex gap-2"></div>
     </div>
 </div>
+
+<style>
+.modal-enter { animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+</style>
 
 <script>
-    // --- Script Editor (Ace) ---
-    var editor = ace.edit("ace-editor");
-    editor.setTheme("ace/theme/monokai");
-    editor.session.setMode("ace/mode/python");
+    // --- 1. INITIALIZATION ---
+    let editor = null;
+    let currentOpenPath = "";
+    let isDirty = false;
 
-    let activeFile = "";
-    let allFiles = [];
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+    });
 
-    function showScriptEditor() {
-        showModal('modalEditor');
-        fetchFileList();
-    }
+    // --- 2. CUSTOM MODAL SYSTEM ---
+    const customAlert = {
+        el: document.getElementById('customModal'),
+        iconBg: document.getElementById('modalIconBg'),
+        icon: document.getElementById('modalIcon'),
+        title: document.getElementById('modalTitle'),
+        msg: document.getElementById('modalMessage'),
+        footer: document.getElementById('modalFooter'),
 
-    function fetchFileList() {
-        fetch('/list-files')
-            .then(r => r.json())
-            .then(files => {
-                allFiles = files;
-                renderFileList(files);
-            });
-    }
+        show({ type = 'info', title, message, onConfirm = null, confirmText = 'Continue', showInput = false, inputPlaceholder = '' }) {
+            this.el.classList.remove('hidden');
+            this.title.innerText = title;
+            this.msg.innerText = message;
+            this.footer.innerHTML = '';
 
-    function renderFileList(files) {
-        const tree = document.getElementById('file-tree');
-        tree.innerHTML = files
-            .map(f => `<div class="file-item" onclick="loadFile('${f}', this)">${f}</div>`)
-            .join('');
-    }
+            // Icon & Theme Styling
+            const themes = {
+                danger: { bg: 'bg-red-50', text: 'text-red-600', icon: 'trash-2', btn: 'bg-red-600 hover:bg-red-700 shadow-red-100' },
+                warning: { bg: 'bg-amber-50', text: 'text-amber-600', icon: 'alert-triangle', btn: 'bg-red-600 hover:bg-red-700 shadow-red-100' },
+                success: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: 'check-circle', btn: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' },
+                info: { bg: 'bg-blue-50', text: 'text-blue-600', icon: 'info', btn: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' }
+            };
+            const theme = themes[type] || themes.info;
 
-    function filterFiles() {
-        const query = document.getElementById('fileSearch').value.toLowerCase();
-        renderFileList(allFiles.filter(f => f.toLowerCase().includes(query)));
-    }
+            this.iconBg.className = `w-10 h-10 rounded-full ${theme.bg} flex items-center justify-center mx-auto mb-3`;
+            this.icon.className = `w-5 h-5 ${theme.text}`;
+            this.icon.setAttribute('data-lucide', theme.icon);
+            lucide.createIcons();
 
-    function createNewNode(type) {
-        const name = document.getElementById('newNodeName').value;
-        if (!name) return alert("Masukkan nama!");
+            // Optional Input (for Secure Save)
+            let inputEl = null;
+            if (showInput) {
+                inputEl = document.createElement('input');
+                inputEl.type = "text";
+                inputEl.placeholder = inputPlaceholder;
+                inputEl.className = "w-full mb-4 px-3 py-2 text-xs border rounded-lg outline-none focus:ring-1 focus:ring-red-500";
+                this.msg.after(inputEl);
+            }
 
-        fetch('/create-node', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: name, type: type})
-        })
-            .then(r => r.json())
-            .then(d => {
-                if (d.success) {
-                    document.getElementById('newNodeName').value = '';
-                    fetchFileList();
-                } else {
-                    alert(d.error);
-                }
-            });
-    }
+            // Buttons
+            const btnCancel = document.createElement('button');
+            btnCancel.className = "flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-[11px] font-bold hover:bg-gray-200 transition-all";
+            btnCancel.innerText = 'Cancel';
+            btnCancel.onclick = () => { this.hide(); if(showInput) inputEl.remove(); };
 
-    function loadFile(path, el) {
-        activeFile = path;
-        document.getElementById('file-path-display').innerText = path;
-        document.querySelectorAll('.file-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
+            const btnConfirm = document.createElement('button');
+            btnConfirm.className = `flex-1 py-2.5 ${theme.btn} text-white rounded-xl text-[11px] font-bold shadow-lg transition-all`;
+            btnConfirm.innerText = confirmText;
+            btnConfirm.onclick = () => {
+                const val = showInput ? inputEl.value : null;
+                if (showInput && val !== "SIJAGOAN") {
+                    inputEl.classList.add('border-red-500', 'animate-shake');
+                    return;
+                }
+                this.hide();
+                if (showInput) inputEl.remove();
+                if (onConfirm) onConfirm(val);
+            };
 
-        fetch(`/get-file-content?path=${path}`)
-            .then(r => r.json())
-            .then(d => {
-                editor.setValue(d.content, -1);
-                if (path.endsWith('.py')) editor.session.setMode("ace/mode/python");
-                else if (path.endsWith('.json')) editor.session.setMode("ace/mode/json");
-                else editor.session.setMode("ace/mode/html");
-            });
-    }
+            this.footer.appendChild(btnCancel);
+            this.footer.appendChild(btnConfirm);
+        },
+        hide() { this.el.classList.add('hidden'); }
+    };
 
-    function saveCurrentFile() {
-        if (!activeFile) return;
+    // --- 3. SEARCH & FILTER ---
+    function filterFiles() {
+        const query = document.getElementById('fileSearch').value.toLowerCase();
+        const buttons = document.querySelectorAll('#filesContainer button');
+        buttons.forEach(btn => {
+            const fileName = btn.querySelector('span').innerText.toLowerCase();
+            btn.classList.toggle('hidden', !fileName.includes(query));
+        });
+    }
 
-        fetch('/save-file-content', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({path: activeFile, content: editor.getValue()})
-        })
-            .then(r => r.json())
-            .then(d => alert(d.success ? "Saved" : "Error"));
-    }
-
-    // --- Pagination client-side untuk Kelas & Kelompok ---
-    function paginateTable(tbodyId, pagingId, rowsPerPage) {
-        const body = document.getElementById(tbodyId);
-        const paging = document.getElementById(pagingId);
-        const rows = Array.from(body.getElementsByTagName('tr'));
-
-        let currentPage = 1;
-        const totalPages = Math.ceil(rows.length / rowsPerPage) || 1;
-
-        function showPage(p) {
-            currentPage = p;
-            const start = (p - 1) * rowsPerPage;
-            const end = start + rowsPerPage;
-
-            rows.forEach((row, index) => {
-                row.style.display = (index >= start && index < end) ? '' : 'none';
-            });
-
-            renderControls();
-        }
-
-        function renderControls() {
-            paging.innerHTML = '';
-
-            // kalau cuma 1 halaman -> gausah tampil pagination sama sekali
-            if (totalPages <= 1) {
-                return;
+    // --- 4. EDITOR ACTIONS ---
+function closeScriptEditor() {
+    if (isDirty) {
+        customAlert.show({
+            type: 'warning',
+            title: 'Unsaved Changes',
+            message: 'Discard changes and close the editor?',
+            confirmText: 'Discard & Close',
+            onConfirm: () => {
+                // ⭐ TAMBAH 2 BARIS INI:
+                if (editor) editor.session.setValue(""); 
+                document.getElementById('editorModal').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                isDirty = false;
+                updateDirtyUI();
             }
-
-            // halaman > 1:
-            // kalau currentPage > 1 baru ada Previous
-            if (currentPage > 1) {
-                const prev = document.createElement('button');
-                prev.textContent = 'Previous';
-                prev.className = 'btn-page';
-                prev.onclick = () => showPage(currentPage - 1);
-                paging.appendChild(prev);
-            }
-
-            const span = document.createElement('span');
-            span.textContent = `${currentPage} / ${totalPages}`;
-            paging.appendChild(span);
-
-            // kalau currentPage < totalPages baru ada Next
-            if (currentPage < totalPages) {
-                const next = document.createElement('button');
-                next.textContent = 'Next';
-                next.className = 'btn-page';
-                next.onclick = () => showPage(currentPage + 1);
-                paging.appendChild(next);
-            }
-        }
-
-        showPage(1);
+        });
+    } else {
+        // ⭐ TAMBAH 2 BARIS INI JUGA:
+        if (editor) editor.session.setValue(""); 
+        document.getElementById('editorModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
     }
+}
 
-    document.addEventListener('DOMContentLoaded', () => {
-        paginateTable('bodyClass', 'pagingClass', 5);
-        paginateTable('bodyGroup', 'pagingGroup', 5);
-    });
+    async function saveFile() {
+        if (!currentOpenPath) return;
 
-    // --- Modal & aksi CRUD sederhana ---
-    function showModal(id) {
-        document.getElementById(id).style.display = 'block';
+        customAlert.show({
+            type: 'success',
+            title: 'Confirm Save',
+            message: 'This is a system file. Type "SIJAGOAN" to confirm changes:',
+            showInput: true,
+            inputPlaceholder: 'Enter security key...',
+            confirmText: 'Verify & Save',
+            onConfirm: async () => {
+                const content = editor.getValue();
+                const res = await fetch('/save-file-content', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ path: currentOpenPath, content: content })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    customAlert.show({ type: 'success', title: 'Success', message: 'File saved successfully!', confirmText: 'Done' });
+                    isDirty = false;
+                    updateDirtyUI();
+                }
+            }
+        });
+    }
+
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        async function submitClass() {
+            const name = document.getElementById('newClassName').value.trim();
+            if (!name) return alert('Class name required');
+            await fetch('/add_class_db', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ class_name: name })
+            });
+            location.reload();
+        }
+
+        async function submitGroup() {
+            const name = document.getElementById('newGroupName').value.trim();
+            if (!name) return alert('Group name required');
+            await fetch('/add_group_db', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ group_name: name })
+            });
+            location.reload();
+        }
+
+   // --- 5. DATA MANAGEMENT (CRUD) ---
+    async function deleteUser(username) {
+        customAlert.show({
+            type: 'danger',
+            title: 'Delete User',
+            message: `Permanently delete user "${username}"?`,
+            confirmText: 'Delete Now',
+            onConfirm: async () => {
+                await fetch('/delete_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+                location.reload();
+            }
+        });
+    }
+
+    async function deleteClass(className) {
+        customAlert.show({
+            type: 'danger',
+            title: 'Delete Class',
+            message: `Are you sure you want to remove ${className}?`,
+            confirmText: 'Confirm Delete',
+            onConfirm: async () => {
+                await fetch('/delete_class', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ class_name: className })
+                });
+                location.reload();
+            }
+        });
+    }
+
+    async function deleteGroup(groupName) {
+        customAlert.show({
+            type: 'danger',
+            title: 'Delete Group',
+            message: `Remove group "${groupName}" from the system?`,
+            confirmText: 'Delete Group',
+            onConfirm: async () => {
+                await fetch('/delete_group', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ group_name: groupName })
+                });
+                location.reload();
+            }
+        });
+    }
+
+    // --- 6. CORE FUNCTIONS ---
+    function showScriptEditor() {
+        document.getElementById('editorModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        if (!editor) {
+            editor = ace.edit("ace-editor");
+            editor.setTheme("ace/theme/monokai");
+            editor.session.setMode("ace/mode/python");
+            editor.setOptions({ fontSize: "14px", showPrintMargin: false, useSoftTabs: true, tabSize: 4 });
+            editor.on("input", () => {
+                isDirty = true;
+                updateDirtyUI();
+            });
+        }
+        refreshFileList();
+    }
+
+    function updateDirtyUI() {
+        const badge = document.getElementById('unsavedBadge');
+        isDirty ? badge.classList.remove('hidden') : badge.classList.add('hidden');
+    }
+
+    async function loadFileContent(path, element) {
+        if (isDirty) {
+            customAlert.show({
+                type: 'warning',
+                title: 'Unsaved Progress',
+                message: 'Switch files without saving?',
+                confirmText: 'Discard & Switch',
+                onConfirm: () => actualLoadFile(path, element)
+            });
+        } else {
+            actualLoadFile(path, element);
+        }
+    }
+
+    async function actualLoadFile(path, element) {
+        currentOpenPath = path;
+        document.getElementById('currentFilePath').innerText = path;
+        const res = await fetch(`/get-file-content?path=${path}`);
+        const data = await res.json();
+        editor.setValue(data.content || "", -1);
+        isDirty = false;
+        updateDirtyUI();
+        document.querySelectorAll('#filesContainer button').forEach(b => b.classList.remove('bg-white', 'shadow-sm', 'text-black', 'font-bold'));
+        element.classList.add('bg-white', 'shadow-sm', 'text-black', 'font-bold');
+    }
+
+    async function refreshFileList() {
+        const container = document.getElementById('filesContainer');
+        container.innerHTML = '<div class="p-4 text-xs text-gray-400">Loading files...</div>';
+        const res = await fetch('/list-files');
+        const files = await res.json();
+        container.innerHTML = '';
+        files.forEach(path => {
+            const btn = document.createElement('button');
+            btn.className = "w-full text-left px-3 py-2 text-[11px] font-mono rounded-lg hover:bg-white transition-all truncate text-gray-600 flex items-center gap-2 group";
+            btn.innerHTML = `<i data-lucide="file" class="w-3.5 h-3.5"></i> <span>${path}</span>`;
+            btn.onclick = (e) => loadFileContent(path, e.currentTarget);
+            container.appendChild(btn);
+        });
+        lucide.createIcons();
+    }
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const main = document.getElementById('main-content');
+
+    sidebar.classList.toggle('sidebar-collapsed');
+
+    if (sidebar.classList.contains('sidebar-collapsed')) {
+        main.classList.remove('ml-64');
+        main.classList.add('ml-[80px]');
+    } else {
+        main.classList.remove('ml-[80px]');
+        main.classList.add('ml-64');
     }
-
-    function hideModal(id) {
-        document.getElementById(id).style.display = 'none';
-    }
-
-    function deleteUser(un) {
-        if (confirm("Hapus " + un + "?")) {
-            fetch('/delete_user', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username: un})
-            }).then(() => location.reload());
-        }
-    }
-
-    function submitGroup() {
-        const n = document.getElementById('newGroupName').value;
-        fetch('/add_group_db', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({group_name: n})
-        }).then(() => location.reload());
-    }
-
-    function deleteGroup(n) {
-        if (confirm("Hapus " + n + "?")) {
-            fetch('/delete_group', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({group_name: n})
-            }).then(() => location.reload());
-        }
-    }
-
-    function submitClass() {
-        const n = document.getElementById('newClassName').value;
-        fetch('/add_class_db', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({class_name: n})
-        }).then(() => location.reload());
-    }
-
-    function deleteClass(n) {
-        if (confirm("Hapus " + n + "?")) {
-            fetch('/delete_class', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({class_name: n})
-            }).then(() => location.reload());
-        }
-    }
+}
 </script>
 </body>
 </html>

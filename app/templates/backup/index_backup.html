@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grading Scheme Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 40px 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 25px;
+        }
+        .top-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            transition: background 0.3s;
+        }
+        .btn-result {
+            background-color: #28a745;
+        }
+        .btn-result:hover {
+            background-color: #218838;
+        }
+        .btn-add {
+            background-color: #007bff;
+        }
+        .btn-add:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .btn-edit {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .btn-edit:hover {
+            background-color: #e0a800;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+        }
+        .btn-delete:hover {
+            background-color: #c82333;
+        }
+        table td {
+            vertical-align: middle;
+        }
+.filter-form {
+    margin-bottom: 20px;
+}
+.filter-form select {
+    padding: 8px;
+    margin-right: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+.filter-form button {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.filter-form button:hover {
+    background-color: #0056b3;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Scheme Lists</h1>
+
+        <form class="filter-form" method="GET" action="/">
+            <select name="order_by" id="order_by">
+                <option value="name_asc"  {% if order_by == 'name_asc' %}selected{% endif %}>Lab ID A–Z</option>
+                <option value="name_desc" {% if order_by == 'name_desc' %}selected{% endif %}>Lab ID Z–A</option>
+            </select>
+            <button type="submit">Sort</button>
+        </form>
+
+        <div class="top-actions">
+            <a href="/results" class="btn btn-result">Lab Results</a>
+            <a href="/add_scheme" class="btn btn-add">Add New Scheme</a>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 70px;">No</th>
+                    <th>Lab Name</th>
+                    <th style="width: 200px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for scheme in schemes %}
+                <tr>
+                    <td class="text-center">{{ loop.index }}</td>
+                    <td>
+                        <a href="/edit_scheme/{{ scheme.lab_id }}" class="text-decoration-none">
+                            {{ scheme.lab_id }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="/edit_scheme/{{ scheme.lab_id }}" class="btn btn-edit btn-sm">Edit</a>
+                        <button class="btn btn-delete btn-sm" onclick="deleteScheme('{{ scheme.lab_id }}')">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function deleteScheme(lab_id) {
+            if (confirm("Are you sure you want to delete this scheme?")) {
+                fetch('/delete_scheme', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ lab_id: lab_id })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message || data.error);
+                    window.location.reload();
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, make_response, redirect
+from flask import Flask, request, jsonify, render_template, make_response, redirect, url_for, flash, session
 import os
 import urllib.parse as urlparse
 import requests
@@ -29,6 +29,8 @@ import csv
 from io import StringIO
 import subprocess
 import re
+import random
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -250,8 +252,23 @@ def save_file_content():
 
 @app.before_request
 def validate_content_type():
-    if request.method == 'POST' and not request.is_json:
-        return jsonify({"error": "Content-Type harus berupa application/json"}), 415
+    # 1. Biarkan GET request lewat (untuk nampilin halaman)
+    if request.method != 'POST':
+        return
+
+    # 2. JALUR VIP: Jika mengakses login, jangan cek Content-Type sama sekali
+    # Kita pakai request.path agar lebih akurat
+    if request.path == '/login' or request.endpoint == 'login_web':
+        return
+
+    # 3. Untuk sisanya (API), cek apakah JSON
+    # Kita gunakan cara manual agar tidak memicu error 415 otomatis dari Flask
+    content_type = request.headers.get('Content-Type', '')
+    if 'application/json' not in content_type:
+        return jsonify({
+            "error": "Server error",
+            "details": "Content-Type harus berupa application/json"
+        }), 415
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -750,31 +767,6 @@ def list_labs():
         print(f"Error in list-labs: {str(e)}")  # Debugging
         return jsonify({"error": "Server error", "details": str(e)}), 500
 
-@app.route('/delete-lab', methods=['POST'])
-def delete_lab():
-    try:
-        data = request.json
-        lab_id = data.get("lab_id")
-
-        if not lab_id:
-            return jsonify({"error": "lab_id dibutuhkan"}), 400
-
-        # Cari lab berdasarkan ID
-        lab = db_session.query(Lab).filter(Lab.lab_id == lab_id).first()
-        if not lab:
-            return jsonify({"error": "Lab tidak ditemukan"}), 404
-
-        # Hapus lab
-        db_session.delete(lab)
-        db_session.commit()
-
-        return jsonify({"message": f"Lab '{lab_id}' berhasil dihapus!"}), 200
-
-    except Exception as e:
-        print(f"Error in delete-lab: {str(e)}")  # Debugging
-        db_session.rollback()
-        return jsonify({"error": "Server error", "details": str(e)}), 500
-
 @app.route('/users-not-started-lab-filtered', methods=['GET'])
 def users_not_started_lab_filtered():
     try:
@@ -1236,35 +1228,36 @@ def edit_scheme_post(lab_id):
         db_session.rollback()
         return jsonify({"error": "Gagal mengubah skema", "details": str(e)}), 500
 
-@app.route('/delete_scheme', methods=['POST'])
-def delete_scheme():
+@app.route('/delete-lab', methods=['POST'])
+def delete_lab():
     try:
-        data = request.get_json()
-
-        if not data or "lab_id" not in data:
-            return jsonify({"error": "Data permintaan tidak valid"}), 400
-
+        data = request.json
         lab_id = data.get("lab_id")
-        scheme_file = os.path.join(SCHEME_PATH, f"{lab_id}.json")
 
-        if not os.path.exists(scheme_file):
-            return jsonify({"error": f"Skema '{lab_id}' tidak ditemukan"}), 404
+        if not lab_id:
+            return jsonify({"error": "lab_id dibutuhkan"}), 400
 
-        # Hapus file skema
-        os.remove(scheme_file)
-
-        # Hapus lab dari database
+        # 1. Cari lab berdasarkan ID
         lab = db_session.query(Lab).filter(Lab.lab_id == lab_id).first()
-        if lab:
-            db_session.delete(lab)
-            db_session.commit()
+        if not lab:
+            return jsonify({"error": "Lab tidak ditemukan"}), 404
 
-        return jsonify({"message": f"Skema '{lab_id}' berhasil dihapus!"}), 200
+        # 2. Hapus FILE FISIK-nya dulu sebelum datanya dihapus di DB
+        # Kita ambil path file dari kolom scheme_path di database
+        if lab.scheme_path and os.path.exists(lab.scheme_path):
+            os.remove(lab.scheme_path)
+            print(f"File {lab.scheme_path} berhasil dihapus.")
+
+        # 3. Hapus data di database
+        db_session.delete(lab)
+        db_session.commit()
+
+        return jsonify({"message": f"Lab '{lab_id}' dan file fisiknya berhasil dihapus!"}), 200
 
     except Exception as e:
-        print(f"Error deleting scheme: {str(e)}")  # Debugging
+        print(f"Error in delete-lab: {str(e)}")
         db_session.rollback()
-        return jsonify({"error": "Gagal menghapus skema", "details": str(e)}), 500
+        return jsonify({"error": "Server error", "details": str(e)}), 500
 
 @app.route('/list-schemes', methods=['GET'])
 def list_schemes():
@@ -1294,6 +1287,10 @@ def list_schemes():
 
 @app.route('/')
 def home():
+    return redirect(url_for('dashboard'))
+
+@app.route('/schemes')
+def scheme_list():
     order_by = request.args.get('order_by', 'name_asc')
 
     schemes = []
@@ -1303,7 +1300,6 @@ def home():
             with open(scheme_file, 'r') as f:
                 scheme = json.load(f)
 
-            # kalau lab_id nggak ada di file, ambil dari nama file
             scheme.setdefault('lab_id', filename.replace('.json', ''))
             schemes.append(scheme)
 
@@ -1313,6 +1309,7 @@ def home():
         schemes.sort(key=lambda s: s.get('lab_id', '').lower(), reverse=True)
 
     return render_template('index.html', schemes=schemes, order_by=order_by)
+
 
 @app.route('/add_scheme')
 def add_scheme():
@@ -1538,6 +1535,99 @@ def get_classes():
         return jsonify({"classes": class_list}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/dashboard')
+def dashboard():
+    # Total users dan labs - GUNAKAN db_session yang sudah diimport
+    total_users = db_session.query(User).count()
+    total_labs = db_session.query(Lab).count()
+    
+    # Ambil semua classes
+    classes = db_session.query(Class).all()
+    
+    # Hitung progress per kelas
+    class_progress = {}
+    for cls in classes:
+        class_name = cls.class_name
+        
+        # Ambil semua group dalam kelas ini
+        groups_in_class = db_session.query(User.group_name).filter(
+            User.class_name == class_name
+        ).distinct().all()
+        
+        # Ambil lab yang sudah dikerjakan minimal 1 group di kelas ini
+        completed_labs = set()
+        for (group_name,) in groups_in_class:
+            if group_name:  # Skip jika group_name kosong
+                # Cek LabSession (sudah mulai/dikerjakan)
+                sessions = db_session.query(LabSession.lab_id).filter(
+                    LabSession.group_name == group_name
+                ).all()
+                
+                # Cek GradingResult (sudah dinilai) - query lebih efisien
+                user_usernames = db_session.query(User.username).filter(
+                    User.group_name == group_name,
+                    User.class_name == class_name
+                ).all()
+                usernames = [u[0] for u in user_usernames]
+                
+                if usernames:
+                    results = db_session.query(GradingResult.lab_id).filter(
+                        GradingResult.username.in_(usernames)
+                    ).distinct().all()
+                else:
+                    results = []
+                
+                # Gabungkan lab yang sudah dikerjakan/dinilai
+                for (lab_id,) in sessions + results:
+                    completed_labs.add(lab_id)
+        
+        # Hitung persentase
+        progress_percent = (len(completed_labs) / total_labs * 100) if total_labs > 0 else 0
+        class_progress[class_name] = {
+            'completed': len(completed_labs),
+            'total': total_labs,
+            'percent': round(progress_percent, 1)
+        }
+    
+    return render_template('dashboard.html',
+                         total_users=total_users,
+                         total_labs=total_labs,
+                         classes=classes,
+                         class_progress=class_progress)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login_web():
+    if request.method == 'POST':
+        # silent=True mencegah error 415 jika data bukan JSON murni
+        data = request.get_json(silent=True) 
+        
+        # Jika data kosong (mungkin karena kirim via form biasa), coba ambil dari form
+        username = (data or {}).get('username') or request.form.get('username')
+        password = (data or {}).get('password') or request.form.get('password')
+
+        if username == 'admin' and password == 'SIJAGOAN':
+            session['logged_in'] = True
+            session['username'] = username
+            
+            # Cek apakah request minta JSON atau redirect biasa
+            if request.is_json or request.headers.get('Accept') == 'application/json':
+                return jsonify({"success": True, "redirect": url_for('home')})
+            return redirect(url_for('home'))
+        
+        else:
+            if request.is_json:
+                return jsonify({"success": False, "error": "Kredensial Salah"}), 401
+            flash('Invalid credentials')
+            return redirect(url_for('login_web'))
+
+    return render_template('login.html')
+
+# Ubah nama fungsi logout menjadi logout_web
+@app.route('/logout')
+def logout_web():
+    session.clear()
+    return redirect(url_for('login_web'))
 
 if __name__ == "__main__":
     init_db()

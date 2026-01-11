@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheme List - GradingCTL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: all 0.3s ease; }
+        #sidebar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s; }
+        #main-content { transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-collapsed { width: 80px !important; padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+        .sidebar-collapsed .nav-text, .sidebar-collapsed .sidebar-header-text, .sidebar-collapsed .admin-text { display: none; }
+        .sidebar-collapsed .nav-item { justify-content: center !important; padding-left: 0 !important; }
+        .sidebar-collapsed .nav-item i { margin-right: 0 !important; }
+        .sidebar-active-indicator { position: absolute; left: 0; width: 4px; height: 20px; background-color: white; border-radius: 0 4px 4px 0; }
+
+        .premium-shadow {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12), 0 12px 20px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 overflow-x-hidden">
+
+    <aside id="sidebar" class="fixed left-3 top-3 bottom-3 w-64 bg-black rounded-[1.5rem] flex flex-col p-4 text-white shadow-xl z-50 overflow-hidden">
+        <div class="px-3 py-4 flex items-center justify-between">
+            <h1 class="text-xl font-bold tracking-tight sidebar-header-text">GradingCTL</h1>
+            <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-800 rounded-lg transition-colors flex items-center justify-center">
+                <i data-lucide="menu" class="w-5 h-5 text-white"></i>
+            </button>
+        </div>
+
+        <div class="w-full h-[1px] bg-gray-800 mb-6"></div>
+
+        <div class="px-3 mb-6 flex items-center gap-3 admin-container">
+            <div class="w-10 h-10 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center">
+                <i data-lucide="user" class="w-5 h-5 text-gray-300"></i>
+            </div>
+            <span class="font-medium text-base admin-text">Admin</span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <nav class="space-y-1">
+                <a href="/dashboard" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="layout-dashboard" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Dashboard</span>
+                </a>
+                <a href="/" class="nav-item group flex items-center px-3 py-2.5 text-white relative bg-gray-900 rounded-xl transition-all">
+                    <div class="sidebar-active-indicator"></div>
+                    <i data-lucide="list" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Scheme List</span>
+                </a>
+                <a href="/results" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="file-text" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Grading Result</span>
+                </a>
+                <a href="/admin" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
+                    <i data-lucide="settings" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm nav-text">Management</span>
+                </a>
+            </nav>
+
+            <div class="px-3 my-4"><div class="w-full h-[1px] bg-gray-800"></div></div>
+
+            <a href="/logout" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-red-400 hover:bg-gray-900 rounded-xl transition-all">
+                <i data-lucide="log-out" class="mr-3 w-5 h-5 flex-shrink-0"></i>
+                <span class="text-sm nav-text">Log Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <main id="main-content" class="ml-64 p-8 min-h-screen flex justify-center">
+        <div class="max-w-5xl w-full">
+            <header class="mb-6">
+                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Scheme List</h1>
+                <p class="text-gray-500">Manage your lab grading parameters</p>
+                <div class="w-full h-1 bg-gray-200 mt-4 rounded-full"></div>
+            </header>
+
+            <div class="mb-6 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sort:</span>
+                    <select id="sort-filter" onchange="sortTable()" class="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer">
+                        <option value="az">A - Z</option>
+                        <option value="za">Z - A</option>
+                    </select>
+                </div>
+                <a href="/add_scheme" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-200 uppercase tracking-wide">
+                    <i data-lucide="plus" class="w-4 h-4 text-white"></i>
+                    Add Scheme
+                </a>
+            </div>
+
+            <div class="bg-white rounded-[2rem] premium-shadow border border-gray-100 overflow-hidden">
+                <table id="scheme-table" class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100">
+                            <th class="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest">No</th>
+                            <th class="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest">Lab Name</th>
+                            <th class="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for scheme in schemes %}
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            <td class="px-8 py-5 text-sm text-gray-400 font-medium w-24">#{{ loop.index }}</td>
+
+                            <td class="px-8 py-5 text-base font-semibold text-gray-800 lab-name">{{ scheme.lab_id }}</td>
+
+                            <td class="px-8 py-5">
+                                <div class="flex justify-center gap-4">
+                                    <a href="/edit_scheme/{{ scheme.lab_id }}" class="p-2 text-amber-500 hover:bg-amber-50 rounded-xl transition-all flex items-center justify-center" title="Edit">
+                                        <i data-lucide="edit-3" class="w-5 h-5"></i>
+                                    </a>
+                                    <button onclick="deleteScheme('{{ scheme.lab_id }}')" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all flex items-center justify-center" title="Delete">
+                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="px-8 py-20 text-center">
+                                <div class="flex flex-col items-center text-gray-300">
+                                    <i data-lucide="folder-open" class="w-16 h-16 mb-4 opacity-20"></i>
+                                    <p class="text-lg italic font-medium">No schemes found.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            sidebar.classList.toggle('sidebar-collapsed');
+            if (sidebar.classList.contains('sidebar-collapsed')) {
+                mainContent.style.marginLeft = "85px";
+            } else {
+                mainContent.style.marginLeft = "256px";
+            }
+        }
+
+        function sortTable() {
+            const val = document.getElementById('sort-filter').value;
+            const tbody = document.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr:not(:has(td[colspan]))'));
+
+            if (rows.length === 0) return;
+
+            rows.sort((a, b) => {
+                const nameA = a.querySelector('.lab-name').textContent.trim().toLowerCase();
+                const nameB = b.querySelector('.lab-name').textContent.trim().toLowerCase();
+                if (val === 'az') return nameA.localeCompare(nameB);
+                return nameB.localeCompare(nameA);
+            });
+
+            rows.forEach((row, index) => {
+                row.querySelector('td:first-child').textContent = `#${index + 1}`;
+                tbody.appendChild(row);
+            });
+        }
+
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+    "lab_id": "kasihpahambos",
+    "grading_type": "kelompok",
+    "criteria": [
+        {
+            "type": "command",
+            "key": "121dfhdwh",
+            "expected": "true",
+            "description": "pastikan user ada",
+            "score": 100.0,
+            "cleanup": false
+        }
+    ]
+}
