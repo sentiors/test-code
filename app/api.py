@@ -18,7 +18,11 @@ from .utils_grafana import (
     check_dashboard_folder,
     check_datasource,
 )
-from .utils_gmail import check_alert_email_sent_any
+import smtplib
+import uuid
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from .utils_gmail import check_alert_email_sent_any, send_otp_gmail
 from .database import db_session, init_db
 from .models import User, Lab, GradingResult, LabSession, Group, Class, Admin
 from datetime import datetime
@@ -330,26 +334,6 @@ def register():
     except Exception as e:
         db_session.rollback()
         return jsonify({"error": str(e)}), 500
-
-@app.route('/reset_password', methods=['POST'])
-def reset_password():
-    data = request.json
-    username = data.get('username')
-    identity = data.get('identity') # Bisa email atau phone
-    new_password = data.get('new_password')
-
-    user = db_session.query(User).filter(User.username == username).first()
-
-    if not user:
-        return jsonify({"error": "Username tidak ditemukan"}), 404
-
-    # Cek apakah identity cocok dengan email ATAU phone di DB
-    if identity == user.email or identity == user.phone:
-        user.password = new_password
-        db_session.commit()
-        return jsonify({"message": "Password berhasil diubah!"}), 200
-    else:
-        return jsonify({"error": "Email atau Nomor Telepon tidak cocok dengan data"}), 401
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -1683,15 +1667,26 @@ def login_web():
 
 @app.route('/add_admin_db', methods=['POST'])
 def add_admin():
-    # Proteksi: Hanya superadmin yang bisa akses
     if session.get('role') != 'superadmin':
         return jsonify({"success": False, "error": "Unauthorized!"}), 403
-        
+
     data = request.json
-    new_admin = Admin(username=data['username'], password=data['password'])
-    db_session.add(new_admin)
-    db_session.commit()
-    return jsonify({"success": True})
+    username = data.get('username')
+    password = data.get('password')
+    email = data.get('email')
+
+    if not all([username, password, email]):
+        return jsonify({"success": False, "error": "Data tidak lengkap!"}), 400
+
+    try:
+        # Langsung simpan ke tabel Admin dengan email
+        new_admin = Admin(username=username, password=password, email=email)
+        db_session.add(new_admin)
+        db_session.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/delete_admin/<int:admin_id>', methods=['DELETE'])
 def delete_admin(admin_id):
@@ -1710,6 +1705,161 @@ def delete_admin(admin_id):
 def logout_web():
     session.clear()
     return redirect(url_for('login_web'))
+
+# HAPUS fungsi reset_password() yang lama di api.py
+# Ganti dengan dua fungsi ini:
+
+otp_storage = {}
+
+@app.route('/request_reset_otp', methods=['POST'])
+def request_reset_otp():
+    data = request.json
+    username = data.get("username")
+    email_input = data.get("email")
+
+    # 1. Cari di tabel User dulu
+    account = db_session.query(User).filter_by(username=username).first()
+    
+    # 2. Kalau tidak ada di User, cari di tabel Admin
+    if not account:
+        account = db_session.query(Admin).filter_by(username=username).first()
+
+    if not account:
+        return jsonify({"error": "Akun tidak ditemukan"}), 404
+
+    if account.email != email_input:
+        return jsonify({"error": "Email tidak cocok"}), 400
+
+    # Generate OTP
+    otp = str(random.randint(100000, 999999))
+    expired = datetime.now() + timedelta(minutes=20)
+
+    # Simpan ke akun yang ditemukan (bisa User atau Admin)
+    account.otp_code = otp
+    account.otp_expiry = expired
+    db_session.commit()
+
+    if send_otp_gmail(account.email, otp):
+        return jsonify({"message": "OTP berhasil dikirim ke email!"}), 200
+    else:
+        return jsonify({"error": "Gagal mengirim email OTP"}), 500
+
+@app.route('/reset_password_with_otp', methods=['POST'])
+def reset_password_with_otp():
+    data = request.json
+    username = data.get("username")
+    otp = data.get("otp")
+    new_password = data.get("new_password")
+
+    # Cari di User atau Admin
+    account = db_session.query(User).filter_by(username=username).first()
+    if not account:
+        account = db_session.query(Admin).filter_by(username=username).first()
+
+    if not account:
+        return jsonify({"error": "Akun tidak ditemukan"}), 404
+
+    # Validasi OTP
+    if account.otp_code != otp:
+        return jsonify({"error": "Kode OTP salah"}), 400
+
+    if account.otp_expiry < datetime.now():
+        return jsonify({"error": "OTP sudah kadaluarsa"}), 400
+
+    # Update Password & Hapus OTP
+    account.password = new_password
+    account.otp_code = None
+    account.otp_expiry = None
+    db_session.commit()
+
+    return jsonify({"message": "Password berhasil direset"}), 200
+
+@app.route('/request_reset_link', methods=['POST'])
+def request_reset_link():
+    try:
+        data = request.json
+        username = data.get('username')
+        email = data.get('email', '').strip().lower()
+
+        user = db_session.query(User).filter_by(
+            username=username,
+            email=email
+        ).first()
+
+        if not user:
+            return jsonify({"error": "Username atau Email tidak cocok!"}), 404
+
+        # TOKEN SAJA (TANPA EXPIRE)
+        token = str(uuid.uuid4())
+        user.reset_token = token
+        db_session.commit()
+
+        reset_url = f"https://grading.smkn1cibinong.sch.id/reset-page/{token}"
+
+        smtp_user = "monitoringsija@gmail.com"
+        smtp_pass = "seggglrmhfquoobr"
+
+        msg = MIMEMultipart()
+        msg['From'] = f"Monitoring SIJA <{smtp_user}>"
+        msg['To'] = email
+        msg['Subject'] = "Reset Password Akun Grading CTL"
+
+        body = f"""Halo {username},
+
+Klik link berikut untuk reset password Anda:
+{reset_url}
+"""
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=15)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+
+        return jsonify({"message": "Link reset password telah dikirim ke email."}), 200
+
+    except Exception as e:
+        db_session.rollback()
+        print(f"Error Reset Password: {e}")
+        return jsonify({"error": "Gagal mengirim reset password."}), 500
+
+
+@app.route('/reset-page/<token>', methods=['GET', 'POST'])
+def reset_page(token):
+    print("\n--- DEBUG START ---")
+    print(f"Token dari URL: {token}")
+
+    user = db_session.query(User).filter_by(reset_token=token).first()
+
+    if not user:
+        print("Token tidak ditemukan")
+        print("--- DEBUG END ---\n")
+        return "<h1>Link Tidak Valid</h1><p>Token reset password tidak ditemukan.</p>", 400
+
+    print(f"Token valid untuk user: {user.username}")
+    print("--- DEBUG END ---\n")
+
+    if request.method == 'POST':
+        new_pw = request.form.get('password')
+
+        if not new_pw:
+            return "Password tidak boleh kosong", 400
+
+        user.password = new_pw
+        user.reset_token = None   # token dipakai sekali
+        db_session.commit()
+
+        return "OK", 200
+
+    return render_template(
+        'reset_password.html',
+        username=user.username
+    )
+
+@app.route('/forgot-password')
+def forgot_password_page():
+    return render_template('forgot_password.html')
 
 if __name__ == "__main__":
     init_db()

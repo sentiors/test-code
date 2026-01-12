@@ -495,15 +495,13 @@ body {
         </div>
         <h3 class="text-lg font-bold text-gray-900 leading-tight">Add New Administrator</h3>
         <p class="text-[11px] text-gray-500 mb-5">Enter admin credentials to register</p>
-
-        <input type="text" id="adminUser" placeholder="e.g. admin123"
-            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-center text-base font-semibold focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:border-transparent outline-none transition-all mb-3"
-            maxlength="50">
         
-        <input type="password" id="adminPass" placeholder="Min 6 characters"
-            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-center text-base font-semibold focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:border-transparent outline-none transition-all mb-5"
-            maxlength="100">
-
+        <input type="text" id="adminUser" placeholder="Username" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-center text-base font-semibold focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:border-transparent outline-none transition-all mb-3" maxlength="50">
+        
+        <input type="email" id="adminEmail" placeholder="Email Address" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-center text-base font-semibold focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:border-transparent outline-none transition-all mb-3">
+        
+        <input type="password" id="adminPass" placeholder="Min 6 characters" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-center text-base font-semibold focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:border-transparent outline-none transition-all mb-5" maxlength="100">
+        
         <div class="flex gap-2">
             <button onclick="hideModal('modalAddAdmin')" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-all">Cancel</button>
             <button onclick="submitNewAdmin()" class="flex-1 py-2.5 bg-black text-white rounded-xl text-xs font-bold hover:bg-gray-800 shadow-lg transition-all">Save Admin</button>
@@ -808,9 +806,10 @@ function closeScriptEditor() {
 
 async function submitNewAdmin() {
     const username = document.getElementById('adminUser').value.trim();
+    const email = document.getElementById('adminEmail').value.trim(); // Ambil Email
     const password = document.getElementById('adminPass').value;
 
-    // VALIDASI INPUT
+    // VALIDASI USERNAME
     if (!username) {
         customAlert.show({
             type: 'warning',
@@ -820,7 +819,7 @@ async function submitNewAdmin() {
         });
         return;
     }
-    
+
     if (username.length < 3) {
         customAlert.show({
             type: 'warning',
@@ -830,7 +829,30 @@ async function submitNewAdmin() {
         });
         return;
     }
-    
+
+    // VALIDASI EMAIL (TAMBAHAN)
+    if (!email) {
+        customAlert.show({
+            type: 'warning',
+            title: 'Email Required',
+            message: 'Please enter an email address for the new admin.',
+            confirmText: 'OK'
+        });
+        return;
+    }
+
+    // Cek format email sederhana
+    if (!email.includes('@') || !email.includes('.')) {
+        customAlert.show({
+            type: 'warning',
+            title: 'Invalid Email',
+            message: 'Please enter a valid email address.',
+            confirmText: 'OK'
+        });
+        return;
+    }
+
+    // VALIDASI PASSWORD
     if (!password) {
         customAlert.show({
             type: 'warning',
@@ -840,7 +862,7 @@ async function submitNewAdmin() {
         });
         return;
     }
-    
+
     if (password.length < 6) {
         customAlert.show({
             type: 'warning',
@@ -856,11 +878,11 @@ async function submitNewAdmin() {
         const res = await fetch('/add_admin_db', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, email, password }) // Tambahkan email di sini
         });
 
         const result = await res.json();
-        
+
         if (result.success) {
             customAlert.show({
                 type: 'success',
@@ -870,8 +892,9 @@ async function submitNewAdmin() {
                 onConfirm: () => {
                     hideModal('modalAddAdmin');
                     document.getElementById('adminUser').value = '';
+                    document.getElementById('adminEmail').value = ''; // Reset input email
                     document.getElementById('adminPass').value = '';
-                    location.reload(); // Refresh untuk tampilkan admin baru
+                    location.reload(); 
                 }
             });
         } else {

@@ -1,7 +1,9 @@
 import os
 import requests
 import base64
+import smtplib
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 
@@ -52,3 +54,52 @@ def check_alert_email_sent_any():
 
     return True, "email_alert_found"
 
+def send_otp_gmail(receiver_email, otp_code):
+    try:
+        access_token = get_gmail_access_token()
+        url = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
+
+        # 1. Subject yang lebih formal
+        subject = "Reset Your Password for GradingCTL"
+
+        # 2. Body dalam format HTML agar terlihat profesional
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                <h2 style="color: #000; text-align: center;">GradingCTL</h2>
+                <hr style="border: 0; border-top: 1px solid #eee;">
+                <p>Hello,</p>
+                <p>We received a request to reset your account password. Please use the following One-Time Password (OTP) to proceed:</p>
+                <div style="background: #f4f4f4; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 8px; margin: 20px 0; color: #000;">
+                    {otp_code}
+                </div>
+                <p>This code is valid for <strong>20 minutes</strong>. If you did not request this change, please ignore this email or contact support if you have concerns.</p>
+                <br>
+                <p style="font-size: 12px; color: #888;">
+                    This is an automated message, please do not reply.<br>
+                    &copy; 2025 GradingCTL - Automatic Grading System.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Menggunakan MIMEMultipart untuk mendukung HTML
+        message = MIMEMultipart()
+        message['to'] = receiver_email
+        message['subject'] = subject
+        message.attach(MIMEText(html_body, 'html'))
+
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+        resp = requests.post(
+            url,
+            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+            json={"raw": raw_message},
+            timeout=10
+        )
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False

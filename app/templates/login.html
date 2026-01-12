@@ -56,15 +56,23 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2 ml-1">Password</label>
-                    <div class="relative">
-                        <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
-                        <input type="password" name="password" required
-                            class="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-black/5 focus:bg-white transition-all"
-                            placeholder="••••••••">
-                    </div>
-                </div>
+<div>
+    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2 ml-1">Password</label>
+    <div class="relative">
+        <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+        <input type="password" name="password" required
+            class="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-black/5 focus:bg-white transition-all"
+            placeholder="••••••••">
+    </div>
+</div>
+
+<div class="flex justify-end pr-1 -mt-2">
+    <a href="{{ url_for('forgot_password_page') }}" 
+       class="text-[10px] font-bold text-gray-400 hover:text-black uppercase tracking-widest transition-all duration-300 flex items-center gap-1 group">
+       <i data-lucide="help-circle" class="w-3 h-3"></i>
+       Forgot Password?
+    </a>
+</div>
 
                 <div class="pt-2">
                     <button type="submit"
@@ -81,13 +89,83 @@
         </p>
     </div>
 
-    <script>
+<div id="customModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="relative bg-white rounded-[2.5rem] p-6 w-full max-w-[320px] shadow-2xl modal-enter border border-gray-100 text-center">
+        <div id="modalIconBg" class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <i id="modalIcon" data-lucide="alert-circle" class="w-6 h-6"></i>
+        </div>
+
+        <h3 id="modalTitle" class="text-lg font-bold text-gray-900 leading-tight mb-2">Notice</h3>
+        <p id="modalMessage" class="text-[12px] text-gray-500 mb-6 leading-relaxed px-2"></p>
+
+        <div id="modalFooter" class="flex gap-2">
+            </div>
+    </div>
+</div>
+
+<style>
+    .modal-enter { animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes modalIn {
+        from { opacity: 0; transform: scale(0.9) translateY(20px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+</style>
+
+<script>
         lucide.createIcons();
 
+        // --- CUSTOM MODAL SYSTEM ---
+        const modal = {
+            el: document.getElementById('customModal'),
+            iconBg: document.getElementById('modalIconBg'),
+            icon: document.getElementById('modalIcon'),
+            title: document.getElementById('modalTitle'),
+            msg: document.getElementById('modalMessage'),
+            footer: document.getElementById('modalFooter'),
+
+            show({ type = 'info', title, message, onConfirm = null }) {
+                this.el.classList.remove('hidden');
+                this.title.innerText = title;
+                this.msg.innerText = message;
+                this.footer.innerHTML = '';
+
+                // Colors & Icons based on type
+                if (type === 'error') {
+                    this.iconBg.className = "w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4";
+                    this.icon.className = "w-6 h-6 text-red-600";
+                    this.icon.setAttribute('data-lucide', 'x-circle');
+                } else if (type === 'success') {
+                    this.iconBg.className = "w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4";
+                    this.icon.className = "w-6 h-6 text-emerald-600";
+                    this.icon.setAttribute('data-lucide', 'check-circle');
+                } else if (type === 'warning') {
+                    this.iconBg.className = "w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4";
+                    this.icon.className = "w-6 h-6 text-amber-600";
+                    this.icon.setAttribute('data-lucide', 'alert-triangle');
+                }
+
+                lucide.createIcons();
+
+                const btnOk = document.createElement('button');
+                btnOk.className = "w-full py-3.5 bg-black text-white rounded-2xl text-xs font-bold hover:scale-[1.02] active:scale-[0.98] transition-all";
+                btnOk.innerText = 'Understand';
+                btnOk.onclick = () => {
+                    this.hide();
+                    if (onConfirm) onConfirm();
+                };
+                this.footer.appendChild(btnOk);
+            },
+
+            hide() {
+                this.el.classList.add('hidden');
+            }
+        };
+
+        // --- LOGIN FORM LOGIC ---
         const loginForm = document.querySelector('form');
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const formData = new FormData(loginForm);
             const data = Object.fromEntries(formData.entries());
 
@@ -106,13 +184,22 @@
                 if (result.success) {
                     window.location.href = result.redirect;
                 } else {
-                    alert(result.error || "Username/Password Salah!");
+                    modal.show({
+                        type: 'error',
+                        title: 'Login Failed',
+                        message: result.error || "Incorrect Username or Password!"
+                    });
                 }
             } catch (err) {
                 console.error(err);
-                alert("Gagal konek ke server!");
+                modal.show({
+                    type: 'warning',
+                    title: 'Connection Error',
+                    message: "Failed to connect to the server. Please check your network."
+                });
             }
         });
     </script>
 </body>
 </html>
+
