@@ -92,12 +92,20 @@ body {
             </button>
         </div>
         <div class="w-full h-[1px] bg-gray-800 mb-6"></div>
-        <div class="px-3 mb-6 flex items-center gap-3 admin-container">
-            <div class="w-10 h-10 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center">
-                <i data-lucide="user" class="w-5 h-5 text-gray-300"></i>
-            </div>
-            <span class="font-medium text-base admin-text">Admin</span>
-        </div>
+<div class="px-3 mb-6 flex items-center gap-3 admin-container">
+    <div class="w-10 h-10 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center border border-gray-600 shadow-inner">
+        <i data-lucide="user" class="w-5 h-5 text-gray-300"></i>
+    </div>
+    
+    <div class="flex flex-col overflow-hidden">
+        <span class="font-black text-sm tracking-tight admin-text uppercase truncate leading-tight">
+            {{ session['username']|upper }}
+        </span>
+        <span class="text-[10px] text-gray-500 font-bold uppercase admin-text tracking-widest">
+            {{ session['role'] }}
+        </span>
+    </div>
+</div>
         <div class="flex-1 overflow-y-auto custom-scrollbar">
             <nav class="space-y-1">
                 <a href="/" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
@@ -143,33 +151,44 @@ body {
                 <div class="w-full h-1 bg-gray-200 mt-4 rounded-full"></div>
             </header>
 
-            <div class="mb-8 flex justify-end">
-                <form method="GET" action="/results" class="flex flex-wrap items-center gap-3 bg-gray-50 px-6 py-3 rounded-xl border border-gray-200">
-                    <span class="text-sm font-medium text-gray-600">Filter:</span>
+<div class="mb-8 flex justify-end">
+    <form method="GET" action="/results" class="flex flex-wrap items-center gap-3 bg-gray-50 px-6 py-3 rounded-xl border border-gray-200">
+        <span class="text-sm font-medium text-gray-600">Filter:</span>
 
-                    <select name="class_name" id="class_name" class="bg-white border rounded-lg px-3 py-2 text-sm">
-                        <option value="">Pilih Kelas</option>
-                    </select>
+        <select name="lab_id" class="bg-white border rounded-lg px-3 py-2 text-sm outline-none">
+            <option value="">All Labs</option>
+            {% for l in labs %}
+            <option value="{{ l.lab_id }}" {% if lab_id == l.lab_id %}selected{% endif %}>{{ l.lab_id }}</option>
+            {% endfor %}
+        </select>
 
-                    <select name="lab_id" id="lab_id" class="bg-white border rounded-lg px-3 py-2 text-sm">
-                        <option value="">Pilih Lab</option>
-                    </select>
+        <select name="class_name" class="bg-white border rounded-lg px-3 py-2 text-sm outline-none">
+            <option value="">All Classes</option>
+            {% for c in classes %}
+            <option value="{{ c.class_name }}" {% if class_name == c.class_name %}selected{% endif %}>{{ c.class_name }}</option>
+            {% endfor %}
+        </select>
 
-                    <select name="group_name" id="group_name" class="bg-white border rounded-lg px-3 py-2 text-sm">
-                        <option value="">Pilih Kelompok</option>
-                    </select>
+        <select name="group_name" class="bg-white border rounded-lg px-3 py-2 text-sm outline-none">
+            <option value="">All Groups</option>
+            {% for g in groups %}
+            <option value="{{ g.group_name }}" {% if group_name == g.group_name %}selected{% endif %}>{{ g.group_name }}</option>
+            {% endfor %}
+        </select>
 
-                    <select name="search_name" id="search_name" class="bg-white border rounded-lg px-3 py-2 text-sm">
-                        <option value="">Pilih Nama</option>
-                    </select>
+        <select name="search_name" class="bg-white border rounded-lg px-3 py-2 text-sm outline-none">
+            <option value="">All Students</option>
+            {% for u in user_list %}
+            <option value="{{ u.name }}" {% if search_name == u.name %}selected{% endif %}>{{ u.name }}</option>
+            {% endfor %}
+        </select>
 
-                    <button type="submit" class="bg-black text-white px-4 py-2 rounded-xl text-sm font-bold">Filter</button>
-                    <button type="button" onclick="resetFilters()" class="p-2 bg-gray-100 rounded-xl">
-                        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-                    </button>
-                </form>
-            </div>
-
+        <button type="submit" class="bg-black text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-800 transition-all">Filter</button>
+        <a href="/results" class="p-2 bg-gray-100 rounded-xl hover:bg-gray-200">
+            <i data-lucide="refresh-cw" class="w-5 h-5 text-gray-600"></i>
+        </a>
+    </form>
+</div>
             <div class="bg-white rounded-[2rem] premium-shadow border border-gray-100 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -185,16 +204,16 @@ body {
                         <tbody class="divide-y divide-gray-50">
                             {% for result in results %}
                             <tr class="hover:bg-gray-50/50 transition-colors">
-                                <td class="px-6 py-5">
-                                    <div class="flex flex-col">
-                                        <span class="font-bold text-gray-900 text-sm">
-                                            {{ users | selectattr('username', 'equalto', result.username) | map(attribute='name') | first or result.username }}
-                                        </span>
-                                        <span class="text-xs text-gray-400 font-medium uppercase tracking-wider">
-                                            {{ result.class_name }} • Group {{ users | selectattr('username', 'equalto', result.username) | map(attribute='group_name') | first or 'N/A' }}
-                                        </span>
-                                    </div>
-                                </td>
+<td class="px-6 py-5">
+    <div class="flex flex-col">
+        <span class="font-bold text-gray-900 text-sm">
+            {{ result.display_name or result.username }}
+        </span>
+        <span class="text-xs text-gray-400 font-medium uppercase tracking-wider">
+            {{ result.display_class }} • Group {{ result.display_group }}
+        </span>
+    </div>
+</td>
                                 <td class="px-6 py-5 text-center">
                                     <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold border border-blue-100">
                                         {{ result.lab_id }}

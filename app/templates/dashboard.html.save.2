@@ -115,22 +115,6 @@ body {
             </button>
         </div>
         <div class="w-full h-[1px] bg-gray-800 mb-6"></div>
-
-<div class="px-3 mb-6 flex items-center gap-3 admin-container">
-    <div class="w-10 h-10 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center border border-gray-600 shadow-inner">
-        <i data-lucide="user" class="w-5 h-5 text-gray-300"></i>
-    </div>
-    
-    <div class="flex flex-col overflow-hidden">
-        <span class="font-black text-sm tracking-tight admin-text uppercase truncate leading-tight">
-            {{ session['username']|upper }}
-        </span>
-        <span class="text-[10px] text-gray-500 font-bold uppercase admin-text tracking-widest">
-            {{ session['role'] }}
-        </span>
-    </div>
-</div>
-
         <div class="flex-1 overflow-y-auto custom-scrollbar">
             <nav class="space-y-1">
                 <a href="/" class="nav-item group flex items-center px-3 py-2.5 text-white relative bg-gray-900 rounded-xl transition-all">
@@ -158,7 +142,6 @@ body {
             </a>
         </div>
     </aside>
-
 
     <main id="main-content" class="ml-64 p-8 min-h-screen flex justify-center transition-all">
         <div class="max-w-5xl w-full">

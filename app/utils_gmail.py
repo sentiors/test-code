@@ -52,24 +52,3 @@ def check_alert_email_sent_any():
 
     return True, "email_alert_found"
 
-def send_otp_email(target_email, otp_code):
-    access_token = get_gmail_access_token()
-    url = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
-    
-    # Membuat format email
-    message = MIMEText(f"Kode OTP reset password Anda adalah: {otp_code}")
-    message['to'] = target_email
-    message['subject'] = "Reset Password OTP - Grading System"
-    
-    # Gmail API butuh format base64url
-    raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-    
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {"raw": raw_message}
-    resp = requests.post(url, headers=headers, json=payload)
-    
-    return resp.status_code == 200

@@ -48,3 +48,10 @@ class Group(Base):
 class Class(Base):
     __tablename__ = 'classes'
     class_name = Column(String, primary_key=True)
+
+class Admin(Base):
+    __tablename__ = 'admins'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

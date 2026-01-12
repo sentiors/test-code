@@ -167,12 +167,20 @@ body {
             </button>
         </div>
         <div class="w-full h-[1px] bg-gray-800 mb-6"></div>
-        <div class="px-3 mb-6 flex items-center gap-3 admin-container">
-            <div class="w-10 h-10 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center">
-                <i data-lucide="user" class="w-5 h-5 text-gray-300"></i>
-            </div>
-            <span class="font-medium text-base admin-text">Admin</span>
-        </div>
+<div class="px-3 mb-6 flex items-center gap-3 admin-container">
+    <div class="w-10 h-10 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center border border-gray-600 shadow-inner">
+        <i data-lucide="user" class="w-5 h-5 text-gray-300"></i>
+    </div>
+    
+    <div class="flex flex-col overflow-hidden">
+        <span class="font-black text-sm tracking-tight admin-text uppercase truncate leading-tight">
+            {{ session['username']|upper }}
+        </span>
+        <span class="text-[10px] text-gray-500 font-bold uppercase admin-text tracking-widest">
+            {{ session['role'] }}
+        </span>
+    </div>
+</div>
         <div class="flex-1 overflow-y-auto custom-scrollbar">
             <nav class="space-y-1">
                 <a href="/" class="nav-item group flex items-center px-3 py-2.5 text-gray-400 hover:text-white hover:bg-gray-900 rounded-xl transition-all">
@@ -197,18 +205,29 @@ body {
 
     <main id="main-content" class="ml-64 p-8 min-h-screen flex justify-center">
         <div class="max-w-5xl w-full">
-            <header class="mb-8">
-                <div class="flex justify-between items-end">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Admin Management</h1>
-                        <p class="text-gray-500">Manage users, classes, groups, and system scripts</p>
-                    </div>
-                    <button onclick="showScriptEditor()" class="bg-cyan-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-cyan-700 transition-all flex items-center gap-2 shadow-lg shadow-cyan-100 uppercase tracking-wide">
-                        <i data-lucide="code" class="w-4 h-4"></i>Manage Scripts
-                    </button>
-                </div>
-                <div class="w-full h-1 bg-gray-200 mt-4 rounded-full"></div>
-            </header>
+<header class="mb-8">
+    <div class="flex justify-between items-end gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Admin Management</h1>
+            <p class="text-gray-500">Manage users, classes, groups, and system scripts</p>
+        </div>
+        <div class="flex items-center gap-3"> <!-- RAPIKAN DI SINI -->
+            {% if session['role'] == 'superadmin' %}
+            <button onclick="showModal('modalAddAdmin')" 
+                class="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-100 h-10">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                ADD NEW ADMIN
+            </button>
+            {% endif %}
+            <button onclick="showScriptEditor()" 
+                class="bg-cyan-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-cyan-700 transition-all flex items-center gap-2 shadow-lg shadow-cyan-100 h-10">
+                <i data-lucide="code" class="w-4 h-4"></i>
+                MANAGE SCRIPTS
+            </button>
+        </div>
+    </div>
+    <div class="w-full h-1 bg-gray-200 mt-4 rounded-full"></div>
+</header>
 
             <div class="mb-8 flex justify-end">
                 <form method="GET" action="/admin" class="flex items-center gap-3 bg-gray-50 px-6 py-3 rounded-xl border border-gray-200">
@@ -295,49 +314,88 @@ body {
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            <i data-lucide="layers" class="w-5 h-5 text-blue-500"></i>Class List
-                        </h3>
-                        <button onclick="showModal('modalClass')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100 uppercase tracking-wide">
-                            <i data-lucide="plus" class="w-4 h-4"></i>Add
-                        </button>
-                    </div>
-                    <div class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                        {% for c in class_list %}
-                        <div class="flex items-center justify-between p-4 bg-gray-50/50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
-                            <span class="font-semibold text-sm text-gray-800">{{ c.class_name }}</span>
-                            <button onclick="deleteClass('{{c.class_name}}')" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
+<div class="grid grid-cols-1 {% if session['role'] == 'superadmin' %}md:grid-cols-3{% else %}md:grid-cols-2{% endif %} gap-6 mt-8">
 
-                <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            <i data-lucide="users" class="w-5 h-5 text-purple-500"></i>Group List
-                        </h3>
-                        <button onclick="showModal('modalGroup')" class="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-purple-700 transition-all flex items-center gap-2 shadow-lg shadow-purple-100 uppercase tracking-wide">
-                            <i data-lucide="plus" class="w-4 h-4"></i>Add
-                        </button>
-                    </div>
-                    <div class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                        {% for g in groups %}
-                        <div class="flex items-center justify-between p-4 bg-gray-50/50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
-                            <span class="font-semibold text-sm text-gray-800">{{ g.group_name }}</span>
-                            <button onclick="deleteGroup('{{g.group_name}}')" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                        {% endfor %}
-                    </div>
+    <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <i data-lucide="layers" class="w-5 h-5 text-blue-500"></i>Class List
+            </h3>
+            <button onclick="showModal('modalClass')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100 uppercase tracking-wide">
+                <i data-lucide="plus" class="w-4 h-4"></i>Add
+            </button>
+        </div>
+
+        <div class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+            {% for c in class_list %}
+            <div class="flex items-center justify-between p-4 bg-gray-50/50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+                <span class="font-semibold text-sm text-gray-800">{{ c.class_name }}</span>
+                <button onclick="deleteClass('{{ c.class_name }}')" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <i data-lucide="users" class="w-5 h-5 text-purple-500"></i>Group List
+            </h3>
+            <button onclick="showModal('modalGroup')" class="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-purple-700 transition-all flex items-center gap-2 shadow-lg shadow-purple-100 uppercase tracking-wide">
+                <i data-lucide="plus" class="w-4 h-4"></i>Add
+            </button>
+        </div>
+
+        <div class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+            {% for g in groups %}
+            <div class="flex items-center justify-between p-4 bg-gray-50/50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+                <span class="font-semibold text-sm text-gray-800">{{ g.group_name }}</span>
+                <button onclick="deleteGroup('{{ g.group_name }}')" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if session['role'] == 'superadmin' %}
+    <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-5 h-5 text-emerald-500"></i>Admin List
+            </h3>
+        </div>
+
+        <div class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+            <div class="flex items-center justify-between p-4 bg-gray-50/50 rounded-xl border border-gray-100 border-l-4 border-l-emerald-500">
+                <div class="flex flex-col">
+                    <span class="font-bold text-sm text-gray-800">admin</span>
+                    <span class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Superadmin</span>
+                </div>
+                <div class="p-2 text-gray-300">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
                 </div>
             </div>
+
+            {% for adm in all_admins %}
+            <div class="flex items-center justify-between p-4 bg-gray-50/50 hover:bg-gray-100 rounded-xl transition-all border border-gray-100">
+                <div class="flex flex-col">
+                    <span class="font-semibold text-sm text-gray-800">{{ adm.username }}</span>
+                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Administrator</span>
+                </div>
+                <button onclick="deleteAdmin('{{ adm.id }}')" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
         </div>
     </main>
 
@@ -429,6 +487,30 @@ body {
     </div>
 </div>
 
+<!-- Modal Add New Admin (NEW DESIGN) -->
+<div id="modalAddAdmin" class="hidden fixed inset-0 bg-black/60 z-[1000] backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2rem] p-5 max-w-[320px] w-full shadow-2xl modal-anim overflow-hidden text-center border border-gray-100">
+        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="user-plus" class="w-5 h-5"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 leading-tight">Add New Administrator</h3>
+        <p class="text-[11px] text-gray-500 mb-5">Enter admin credentials to register</p>
+
+        <input type="text" id="adminUser" placeholder="e.g. admin123"
+            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-center text-base font-semibold focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:border-transparent outline-none transition-all mb-3"
+            maxlength="50">
+        
+        <input type="password" id="adminPass" placeholder="Min 6 characters"
+            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-center text-base font-semibold focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:border-transparent outline-none transition-all mb-5"
+            maxlength="100">
+
+        <div class="flex gap-2">
+            <button onclick="hideModal('modalAddAdmin')" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-all">Cancel</button>
+            <button onclick="submitNewAdmin()" class="flex-1 py-2.5 bg-black text-white rounded-xl text-xs font-bold hover:bg-gray-800 shadow-lg transition-all">Save Admin</button>
+        </div>
+    </div>
+</div>
+
 <style>
 .modal-enter { animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 @keyframes modalIn {
@@ -447,91 +529,91 @@ body {
             : "256px";
     }
 
-    // --- 1. INITIALIZATION ---
-    let editor = null;
-    let currentOpenPath = "";
-    let isDirty = false;
+    // --- 1. INITIALIZATION ---
+    let editor = null;
+    let currentOpenPath = "";
+    let isDirty = false;
 
-    document.addEventListener('DOMContentLoaded', function() {
-        lucide.createIcons();
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+    });
 
-    // --- 2. CUSTOM MODAL SYSTEM ---
-    const customAlert = {
-        el: document.getElementById('customModal'),
-        iconBg: document.getElementById('modalIconBg'),
-        icon: document.getElementById('modalIcon'),
-        title: document.getElementById('modalTitle'),
-        msg: document.getElementById('modalMessage'),
-        footer: document.getElementById('modalFooter'),
+    // --- 2. CUSTOM MODAL SYSTEM ---
+    const customAlert = {
+        el: document.getElementById('customModal'),
+        iconBg: document.getElementById('modalIconBg'),
+        icon: document.getElementById('modalIcon'),
+        title: document.getElementById('modalTitle'),
+        msg: document.getElementById('modalMessage'),
+        footer: document.getElementById('modalFooter'),
 
-        show({ type = 'info', title, message, onConfirm = null, confirmText = 'Continue', showInput = false, inputPlaceholder = '' }) {
-            this.el.classList.remove('hidden');
-            this.title.innerText = title;
-            this.msg.innerText = message;
-            this.footer.innerHTML = '';
+        show({ type = 'info', title, message, onConfirm = null, confirmText = 'Continue', showInput = false, inputPlaceholder = '' }) {
+            this.el.classList.remove('hidden');
+            this.title.innerText = title;
+            this.msg.innerText = message;
+            this.footer.innerHTML = '';
 
-            // Icon & Theme Styling
-            const themes = {
-                danger: { bg: 'bg-red-50', text: 'text-red-600', icon: 'trash-2', btn: 'bg-red-600 hover:bg-red-700 shadow-red-100' },
-                warning: { bg: 'bg-amber-50', text: 'text-amber-600', icon: 'alert-triangle', btn: 'bg-red-600 hover:bg-red-700 shadow-red-100' },
-                success: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: 'check-circle', btn: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' },
-                info: { bg: 'bg-blue-50', text: 'text-blue-600', icon: 'info', btn: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' }
-            };
-            const theme = themes[type] || themes.info;
+            // Icon & Theme Styling
+            const themes = {
+                danger: { bg: 'bg-red-50', text: 'text-red-600', icon: 'trash-2', btn: 'bg-red-600 hover:bg-red-700 shadow-red-100' },
+                warning: { bg: 'bg-amber-50', text: 'text-amber-600', icon: 'alert-triangle', btn: 'bg-red-600 hover:bg-red-700 shadow-red-100' },
+                success: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: 'check-circle', btn: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' },
+                info: { bg: 'bg-blue-50', text: 'text-blue-600', icon: 'info', btn: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' }
+            };
+            const theme = themes[type] || themes.info;
 
-            this.iconBg.className = `w-10 h-10 rounded-full ${theme.bg} flex items-center justify-center mx-auto mb-3`;
-            this.icon.className = `w-5 h-5 ${theme.text}`;
-            this.icon.setAttribute('data-lucide', theme.icon);
-            lucide.createIcons();
+            this.iconBg.className = `w-10 h-10 rounded-full ${theme.bg} flex items-center justify-center mx-auto mb-3`;
+            this.icon.className = `w-5 h-5 ${theme.text}`;
+            this.icon.setAttribute('data-lucide', theme.icon);
+            lucide.createIcons();
 
-            // Optional Input (for Secure Save)
-            let inputEl = null;
-            if (showInput) {
-                inputEl = document.createElement('input');
-                inputEl.type = "text";
-                inputEl.placeholder = inputPlaceholder;
-                inputEl.className = "w-full mb-4 px-3 py-2 text-xs border rounded-lg outline-none focus:ring-1 focus:ring-red-500";
-                this.msg.after(inputEl);
-            }
+            // Optional Input (for Secure Save)
+            let inputEl = null;
+            if (showInput) {
+                inputEl = document.createElement('input');
+                inputEl.type = "text";
+                inputEl.placeholder = inputPlaceholder;
+                inputEl.className = "w-full mb-4 px-3 py-2 text-xs border rounded-lg outline-none focus:ring-1 focus:ring-red-500";
+                this.msg.after(inputEl);
+            }
 
-            // Buttons
-            const btnCancel = document.createElement('button');
-            btnCancel.className = "flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-[11px] font-bold hover:bg-gray-200 transition-all";
-            btnCancel.innerText = 'Cancel';
-            btnCancel.onclick = () => { this.hide(); if(showInput) inputEl.remove(); };
+            // Buttons
+            const btnCancel = document.createElement('button');
+            btnCancel.className = "flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-[11px] font-bold hover:bg-gray-200 transition-all";
+            btnCancel.innerText = 'Cancel';
+            btnCancel.onclick = () => { this.hide(); if(showInput) inputEl.remove(); };
 
-            const btnConfirm = document.createElement('button');
-            btnConfirm.className = `flex-1 py-2.5 ${theme.btn} text-white rounded-xl text-[11px] font-bold shadow-lg transition-all`;
-            btnConfirm.innerText = confirmText;
-            btnConfirm.onclick = () => {
-                const val = showInput ? inputEl.value : null;
-                if (showInput && val !== "SIJAGOAN") {
-                    inputEl.classList.add('border-red-500', 'animate-shake');
-                    return;
-                }
-                this.hide();
-                if (showInput) inputEl.remove();
-                if (onConfirm) onConfirm(val);
-            };
+            const btnConfirm = document.createElement('button');
+            btnConfirm.className = `flex-1 py-2.5 ${theme.btn} text-white rounded-xl text-[11px] font-bold shadow-lg transition-all`;
+            btnConfirm.innerText = confirmText;
+            btnConfirm.onclick = () => {
+                const val = showInput ? inputEl.value : null;
+                if (showInput && val !== "SIJAGOAN") {
+                    inputEl.classList.add('border-red-500', 'animate-shake');
+                    return;
+                }
+                this.hide();
+                if (showInput) inputEl.remove();
+                if (onConfirm) onConfirm(val);
+            };
 
-            this.footer.appendChild(btnCancel);
-            this.footer.appendChild(btnConfirm);
-        },
-        hide() { this.el.classList.add('hidden'); }
-    };
+            this.footer.appendChild(btnCancel);
+            this.footer.appendChild(btnConfirm);
+        },
+        hide() { this.el.classList.add('hidden'); }
+    };
 
-    // --- 3. SEARCH & FILTER ---
-    function filterFiles() {
-        const query = document.getElementById('fileSearch').value.toLowerCase();
-        const buttons = document.querySelectorAll('#filesContainer button');
-        buttons.forEach(btn => {
-            const fileName = btn.querySelector('span').innerText.toLowerCase();
-            btn.classList.toggle('hidden', !fileName.includes(query));
-        });
-    }
+    // --- 3. SEARCH & FILTER ---
+    function filterFiles() {
+        const query = document.getElementById('fileSearch').value.toLowerCase();
+        const buttons = document.querySelectorAll('#filesContainer button');
+        buttons.forEach(btn => {
+            const fileName = btn.querySelector('span').innerText.toLowerCase();
+            btn.classList.toggle('hidden', !fileName.includes(query));
+        });
+    }
 
-    // --- 4. EDITOR ACTIONS ---
+    // --- 4. EDITOR ACTIONS ---
 function closeScriptEditor() {
     if (isDirty) {
         customAlert.show({
@@ -556,173 +638,296 @@ function closeScriptEditor() {
     }
 }
 
-    async function saveFile() {
-        if (!currentOpenPath) return;
+    async function saveFile() {
+        if (!currentOpenPath) return;
 
-        customAlert.show({
-            type: 'success',
-            title: 'Confirm Save',
-            message: 'This is a system file. Type "SIJAGOAN" to confirm changes:',
-            showInput: true,
-            inputPlaceholder: 'Enter security key...',
-            confirmText: 'Verify & Save',
-            onConfirm: async () => {
-                const content = editor.getValue();
-                const res = await fetch('/save-file-content', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ path: currentOpenPath, content: content })
-                });
-                const result = await res.json();
-                if (result.success) {
-                    customAlert.show({ type: 'success', title: 'Success', message: 'File saved successfully!', confirmText: 'Done' });
-                    isDirty = false;
-                    updateDirtyUI();
-                }
-            }
-        });
-    }
+        customAlert.show({
+            type: 'success',
+            title: 'Confirm Save',
+            message: 'This is a system file. Type "SIJAGOAN" to confirm changes:',
+            showInput: true,
+            inputPlaceholder: 'Enter security key...',
+            confirmText: 'Verify & Save',
+            onConfirm: async () => {
+                const content = editor.getValue();
+                const res = await fetch('/save-file-content', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ path: currentOpenPath, content: content })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    customAlert.show({ type: 'success', title: 'Success', message: 'File saved successfully!', confirmText: 'Done' });
+                    isDirty = false;
+                    updateDirtyUI();
+                }
+            }
+        });
+    }
 
-        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-        async function submitClass() {
-            const name = document.getElementById('newClassName').value.trim();
-            if (!name) return alert('Class name required');
-            await fetch('/add_class_db', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ class_name: name })
-            });
-            location.reload();
-        }
+        async function submitClass() {
+            const name = document.getElementById('newClassName').value.trim();
+            if (!name) return alert('Class name required');
+            await fetch('/add_class_db', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ class_name: name })
+            });
+            location.reload();
+        }
 
-        async function submitGroup() {
-            const name = document.getElementById('newGroupName').value.trim();
-            if (!name) return alert('Group name required');
-            await fetch('/add_group_db', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ group_name: name })
-            });
-            location.reload();
-        }
+        async function submitGroup() {
+            const name = document.getElementById('newGroupName').value.trim();
+            if (!name) return alert('Group name required');
+            await fetch('/add_group_db', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ group_name: name })
+            });
+            location.reload();
+        }
 
-   // --- 5. DATA MANAGEMENT (CRUD) ---
-    async function deleteUser(username) {
-        customAlert.show({
-            type: 'danger',
-            title: 'Delete User',
-            message: `Permanently delete user "${username}"?`,
-            confirmText: 'Delete Now',
-            onConfirm: async () => {
-                await fetch('/delete_user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username })
-                });
-                location.reload();
-            }
-        });
-    }
+   // --- 5. DATA MANAGEMENT (CRUD) ---
+    async function deleteUser(username) {
+        customAlert.show({
+            type: 'danger',
+            title: 'Delete User',
+            message: `Permanently delete user "${username}"?`,
+            confirmText: 'Delete Now',
+            onConfirm: async () => {
+                await fetch('/delete_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+                location.reload();
+            }
+        });
+    }
 
-    async function deleteClass(className) {
-        customAlert.show({
-            type: 'danger',
-            title: 'Delete Class',
-            message: `Are you sure you want to remove ${className}?`,
-            confirmText: 'Confirm Delete',
-            onConfirm: async () => {
-                await fetch('/delete_class', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ class_name: className })
-                });
-                location.reload();
-            }
-        });
-    }
+    async function deleteClass(className) {
+        customAlert.show({
+            type: 'danger',
+            title: 'Delete Class',
+            message: `Are you sure you want to remove ${className}?`,
+            confirmText: 'Confirm Delete',
+            onConfirm: async () => {
+                await fetch('/delete_class', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ class_name: className })
+                });
+                location.reload();
+            }
+        });
+    }
 
-    async function deleteGroup(groupName) {
-        customAlert.show({
-            type: 'danger',
-            title: 'Delete Group',
-            message: `Remove group "${groupName}" from the system?`,
-            confirmText: 'Delete Group',
-            onConfirm: async () => {
-                await fetch('/delete_group', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ group_name: groupName })
-                });
-                location.reload();
-            }
-        });
-    }
+    async function deleteGroup(groupName) {
+        customAlert.show({
+            type: 'danger',
+            title: 'Delete Group',
+            message: `Remove group "${groupName}" from the system?`,
+            confirmText: 'Delete Group',
+            onConfirm: async () => {
+                await fetch('/delete_group', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ group_name: groupName })
+                });
+                location.reload();
+            }
+        });
+    }
 
-    // --- 6. CORE FUNCTIONS ---
-    function showScriptEditor() {
-        document.getElementById('editorModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        if (!editor) {
-            editor = ace.edit("ace-editor");
-            editor.setTheme("ace/theme/monokai");
-            editor.session.setMode("ace/mode/python");
-            editor.setOptions({ fontSize: "14px", showPrintMargin: false, useSoftTabs: true, tabSize: 4 });
-            editor.on("input", () => {
-                isDirty = true;
-                updateDirtyUI();
-            });
-        }
-        refreshFileList();
-    }
+    // --- 6. CORE FUNCTIONS ---
+    function showScriptEditor() {
+        document.getElementById('editorModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        if (!editor) {
+            editor = ace.edit("ace-editor");
+            editor.setTheme("ace/theme/monokai");
+            editor.session.setMode("ace/mode/python");
+            editor.setOptions({ fontSize: "14px", showPrintMargin: false, useSoftTabs: true, tabSize: 4 });
+            editor.on("input", () => {
+                isDirty = true;
+                updateDirtyUI();
+            });
+        }
+        refreshFileList();
+    }
 
-    function updateDirtyUI() {
-        const badge = document.getElementById('unsavedBadge');
-        isDirty ? badge.classList.remove('hidden') : badge.classList.add('hidden');
-    }
+    function updateDirtyUI() {
+        const badge = document.getElementById('unsavedBadge');
+        isDirty ? badge.classList.remove('hidden') : badge.classList.add('hidden');
+    }
 
-    async function loadFileContent(path, element) {
-        if (isDirty) {
-            customAlert.show({
-                type: 'warning',
-                title: 'Unsaved Progress',
-                message: 'Switch files without saving?',
-                confirmText: 'Discard & Switch',
-                onConfirm: () => actualLoadFile(path, element)
-            });
-        } else {
-            actualLoadFile(path, element);
-        }
-    }
+    async function loadFileContent(path, element) {
+        if (isDirty) {
+            customAlert.show({
+                type: 'warning',
+                title: 'Unsaved Progress',
+                message: 'Switch files without saving?',
+                confirmText: 'Discard & Switch',
+                onConfirm: () => actualLoadFile(path, element)
+            });
+        } else {
+            actualLoadFile(path, element);
+        }
+    }
 
-    async function actualLoadFile(path, element) {
-        currentOpenPath = path;
-        document.getElementById('currentFilePath').innerText = path;
-        const res = await fetch(`/get-file-content?path=${path}`);
-        const data = await res.json();
-        editor.setValue(data.content || "", -1);
-        isDirty = false;
-        updateDirtyUI();
-        document.querySelectorAll('#filesContainer button').forEach(b => b.classList.remove('bg-white', 'shadow-sm', 'text-black', 'font-bold'));
-        element.classList.add('bg-white', 'shadow-sm', 'text-black', 'font-bold');
-    }
+    async function actualLoadFile(path, element) {
+        currentOpenPath = path;
+        document.getElementById('currentFilePath').innerText = path;
+        const res = await fetch(`/get-file-content?path=${path}`);
+        const data = await res.json();
+        editor.setValue(data.content || "", -1);
+        isDirty = false;
+        updateDirtyUI();
+        document.querySelectorAll('#filesContainer button').forEach(b => b.classList.remove('bg-white', 'shadow-sm', 'text-black', 'font-bold'));
+        element.classList.add('bg-white', 'shadow-sm', 'text-black', 'font-bold');
+    }
 
-    async function refreshFileList() {
-        const container = document.getElementById('filesContainer');
-        container.innerHTML = '<div class="p-4 text-xs text-gray-400">Loading files...</div>';
-        const res = await fetch('/list-files');
-        const files = await res.json();
-        container.innerHTML = '';
-        files.forEach(path => {
-            const btn = document.createElement('button');
-            btn.className = "w-full text-left px-3 py-2 text-[11px] font-mono rounded-lg hover:bg-white transition-all truncate text-gray-600 flex items-center gap-2 group";
-            btn.innerHTML = `<i data-lucide="file" class="w-3.5 h-3.5"></i> <span>${path}</span>`;
-            btn.onclick = (e) => loadFileContent(path, e.currentTarget);
-            container.appendChild(btn);
-        });
-        lucide.createIcons();
-    }
+    async function refreshFileList() {
+        const container = document.getElementById('filesContainer');
+        container.innerHTML = '<div class="p-4 text-xs text-gray-400">Loading files...</div>';
+        const res = await fetch('/list-files');
+        const files = await res.json();
+        container.innerHTML = '';
+        files.forEach(path => {
+            const btn = document.createElement('button');
+            btn.className = "w-full text-left px-3 py-2 text-[11px] font-mono rounded-lg hover:bg-white transition-all truncate text-gray-600 flex items-center gap-2 group";
+            btn.innerHTML = `<i data-lucide="file" class="w-3.5 h-3.5"></i> <span>${path}</span>`;
+            btn.onclick = (e) => loadFileContent(path, e.currentTarget);
+            container.appendChild(btn);
+        });
+        lucide.createIcons();
+    }
+
+async function submitNewAdmin() {
+    const username = document.getElementById('adminUser').value.trim();
+    const password = document.getElementById('adminPass').value;
+
+    // VALIDASI INPUT
+    if (!username) {
+        customAlert.show({
+            type: 'warning',
+            title: 'Username Required',
+            message: 'Please enter a username for the new admin.',
+            confirmText: 'OK'
+        });
+        return;
+    }
+    
+    if (username.length < 3) {
+        customAlert.show({
+            type: 'warning',
+            title: 'Username Too Short',
+            message: 'Username must be at least 3 characters.',
+            confirmText: 'OK'
+        });
+        return;
+    }
+    
+    if (!password) {
+        customAlert.show({
+            type: 'warning',
+            title: 'Password Required',
+            message: 'Please enter a password for the new admin.',
+            confirmText: 'OK'
+        });
+        return;
+    }
+    
+    if (password.length < 6) {
+        customAlert.show({
+            type: 'warning',
+            title: 'Password Too Short',
+            message: 'Password must be at least 6 characters.',
+            confirmText: 'OK'
+        });
+        return;
+    }
+
+    // Kirim ke server
+    try {
+        const res = await fetch('/add_admin_db', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        const result = await res.json();
+        
+        if (result.success) {
+            customAlert.show({
+                type: 'success',
+                title: 'Admin Added!',
+                message: `New admin "${username}" has been successfully created.`,
+                confirmText: 'Done',
+                onConfirm: () => {
+                    hideModal('modalAddAdmin');
+                    document.getElementById('adminUser').value = '';
+                    document.getElementById('adminPass').value = '';
+                    location.reload(); // Refresh untuk tampilkan admin baru
+                }
+            });
+        } else {
+            customAlert.show({
+                type: 'danger',
+                title: 'Failed to Add Admin',
+                message: result.error || 'Unknown error occurred.',
+                confirmText: 'OK'
+            });
+        }
+    } catch (error) {
+        customAlert.show({
+            type: 'danger',
+            title: 'Network Error',
+            message: 'Failed to connect to server. Please try again.',
+            confirmText: 'OK'
+        });
+    }
+}
+
+async function deleteAdmin(adminId) {
+    customAlert.show({
+        type: 'danger',
+        title: 'Delete Administrator?',
+        message: 'This action cannot be undone. This admin will lose all access to the system.',
+        confirmText: 'Yes, Delete',
+        cancelText: 'Cancel',
+        onConfirm: async () => {
+            try {
+                const res = await fetch(`/delete_admin/${adminId}`, { 
+                    method: 'DELETE' 
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    location.reload();
+                } else {
+                    customAlert.show({
+                        type: 'danger',
+                        title: 'Error',
+                        message: result.error || 'Failed to delete admin.',
+                        confirmText: 'OK'
+                    });
+                }
+            } catch (err) {
+                customAlert.show({
+                    type: 'danger',
+                    title: 'Network Error',
+                    message: 'Failed to connect to server.',
+                    confirmText: 'OK'
+                });
+            }
+        }
+    });
+}
+
 </script>
 </body>
 </html>
