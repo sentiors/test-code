@@ -1784,16 +1784,23 @@ def get_user_profile():
     if not auth_header or not auth_header.startswith("Bearer "):
         return jsonify({"error": "Token tidak valid"}), 401
 
-    full_token = auth_header.split(" ")[1]
+    # Mengambil seluruh string setelah 'Bearer '
+    # Walaupun ada spasi, request.headers akan mengambil semuanya
+    full_token = auth_header[7:] 
 
-    # Ambil bagian paling belakang setelah tanda '-' terakhir
-    # Contoh: 'dummy-token-kelompok1-SIJA 1-silsil' -> 'silsil'
-    username_from_token = full_token.split("-")[-1]
+    # Ambil username (bagian paling terakhir setelah karakter '-')
+    # Contoh: "dummy-token-kelompok1-SIJA 1-silsil" -> ["...", "silsil"]
+    parts = full_token.rsplit('-', 1)
+    if len(parts) < 2:
+        return jsonify({"error": "Format token tidak dikenali"}), 400
+    
+    username_target = parts[1].strip()
 
-    user = db_session.query(User).filter(User.username == username_from_token).first()
+    # Cari di database
+    user = db_session.query(User).filter(User.username == username_target).first()
     
     if not user:
-        return jsonify({"error": f"User '{username_from_token}' tidak ditemukan"}), 404
+        return jsonify({"error": f"User '{username_target}' tidak ditemukan"}), 404
 
     return jsonify({
         "name": user.name,
