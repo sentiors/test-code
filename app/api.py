@@ -153,7 +153,7 @@ def load_static_users():
     except Exception as e:
         print(f"Error loading users: {e}")
     
-    return {"admin": "SIJAGOAN"} # Fallback jika file rusak/tidak ada
+    return {"admin": "naogajis"} # Fallback jika file rusak/tidak ada
 
 def run_cleanup_actions(lab_id, username):
     import re
@@ -1774,92 +1774,35 @@ def reset_password_with_otp():
 
     return jsonify({"message": "Password berhasil direset"}), 200
 
-@app.route('/request_reset_link', methods=['POST'])
-def request_reset_link():
-    try:
-        data = request.json
-        username = data.get('username')
-        email = data.get('email', '').strip().lower()
-
-        user = db_session.query(User).filter_by(
-            username=username,
-            email=email
-        ).first()
-
-        if not user:
-            return jsonify({"error": "Username atau Email tidak cocok!"}), 404
-
-        # TOKEN SAJA (TANPA EXPIRE)
-        token = str(uuid.uuid4())
-        user.reset_token = token
-        db_session.commit()
-
-        reset_url = f"https://grading.smkn1cibinong.sch.id/reset-page/{token}"
-
-        smtp_user = "monitoringsija@gmail.com"
-        smtp_pass = "seggglrmhfquoobr"
-
-        msg = MIMEMultipart()
-        msg['From'] = f"Monitoring SIJA <{smtp_user}>"
-        msg['To'] = email
-        msg['Subject'] = "Reset Password Akun Grading CTL"
-
-        body = f"""Halo {username},
-
-Klik link berikut untuk reset password Anda:
-{reset_url}
-"""
-        msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=15)
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-        server.quit()
-
-        return jsonify({"message": "Link reset password telah dikirim ke email."}), 200
-
-    except Exception as e:
-        db_session.rollback()
-        print(f"Error Reset Password: {e}")
-        return jsonify({"error": "Gagal mengirim reset password."}), 500
-
-
-@app.route('/reset-page/<token>', methods=['GET', 'POST'])
-def reset_page(token):
-    print("\n--- DEBUG START ---")
-    print(f"Token dari URL: {token}")
-
-    user = db_session.query(User).filter_by(reset_token=token).first()
-
-    if not user:
-        print("Token tidak ditemukan")
-        print("--- DEBUG END ---\n")
-        return "<h1>Link Tidak Valid</h1><p>Token reset password tidak ditemukan.</p>", 400
-
-    print(f"Token valid untuk user: {user.username}")
-    print("--- DEBUG END ---\n")
-
-    if request.method == 'POST':
-        new_pw = request.form.get('password')
-
-        if not new_pw:
-            return "Password tidak boleh kosong", 400
-
-        user.password = new_pw
-        user.reset_token = None   # token dipakai sekali
-        db_session.commit()
-
-        return "OK", 200
-
-    return render_template(
-        'reset_password.html',
-        username=user.username
-    )
-
 @app.route('/forgot-password')
 def forgot_password_page():
     return render_template('forgot_password.html')
+
+@app.route('/get_user_profile', methods=['GET'])
+def get_user_profile():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Token tidak valid"}), 401
+
+    full_token = auth_header.split(" ")[1]
+
+    # Ambil bagian paling belakang setelah tanda '-' terakhir
+    # Contoh: 'dummy-token-kelompok1-SIJA 1-silsil' -> 'silsil'
+    username_from_token = full_token.split("-")[-1]
+
+    user = db_session.query(User).filter(User.username == username_from_token).first()
+    
+    if not user:
+        return jsonify({"error": f"User '{username_from_token}' tidak ditemukan"}), 404
+
+    return jsonify({
+        "name": user.name,
+        "username": user.username,
+        "email": user.email,
+        "phone": user.phone,
+        "group_name": user.group_name,
+        "class_name": user.class_name
+    }), 200
 
 if __name__ == "__main__":
     init_db()
