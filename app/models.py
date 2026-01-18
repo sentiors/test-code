@@ -13,10 +13,8 @@ class User(Base):
     phone = Column(String)
     group_name = Column(String)
     class_name = Column(String, nullable=False)  # Nama kelas (enum: 10_sija1, 10_sija2, dll.)
-    otp_code = Column(String, nullable=True)
-    otp_expiry = Column(DateTime, nullable=True)
-    reset_token = Column(String(100), nullable=True) # Tambahkan ini
-    reset_token_expiry = Column(DateTime, nullable=True)  # ✅ TAMBAHAN
+    otp_code = Column(String, nullable=True)     # Tambahkan ini
+    otp_expiry = Column(DateTime, nullable=True) # Tambahkan in
 
 class Lab(Base):
     __tablename__ = 'labs'

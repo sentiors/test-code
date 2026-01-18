@@ -628,7 +628,7 @@ def grade_lab():
         is_first = db_session.query(GradingResult).filter_by(lab_id=lab_id, class_name=user_info.class_name, score=100).count() == 0
         
         # Pinalti Waktu (3% per 3 menit)
-        max_duration = 180 
+        max_duration = 108000
         if total_score > 0 and duration > max_duration:
             if is_first:
                 penalty_messages.append("Bonus Pioneer: Pinalti diringankan karena solver yang pertama.")
@@ -640,7 +640,7 @@ def grade_lab():
                 penalty_messages.append(f"Pinalti waktu: -{penalty_total}%")
 
         # Anti-Nyontek (Batas 80)
-        if not is_first and duration < 60 and total_score > 90:
+        if not is_first and duration < 180 and total_score > 90:
             total_score = 80 
             penalty_messages.append("Indikasi kecurangan: Nilai dibatasi ke 80.")
 
@@ -1746,33 +1746,46 @@ def request_reset_otp():
 
 @app.route('/reset_password_with_otp', methods=['POST'])
 def reset_password_with_otp():
-    data = request.json
-    username = data.get("username")
-    otp = data.get("otp")
-    new_password = data.get("new_password")
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Data JSON tidak ditemukan"}), 400
 
-    # Cari di User atau Admin
-    account = db_session.query(User).filter_by(username=username).first()
-    if not account:
-        account = db_session.query(Admin).filter_by(username=username).first()
+        username = data.get("username")
+        otp = data.get("otp")
+        new_password = data.get("new_password")
 
-    if not account:
-        return jsonify({"error": "Akun tidak ditemukan"}), 404
+        # Cari di User atau Admin
+        account = db_session.query(User).filter_by(username=username).first()
+        if not account:
+            account = db_session.query(Admin).filter_by(username=username).first()
 
-    # Validasi OTP
-    if account.otp_code != otp:
-        return jsonify({"error": "Kode OTP salah"}), 400
+        if not account:
+            return jsonify({"error": "Akun tidak ditemukan"}), 404
 
-    if account.otp_expiry < datetime.now():
-        return jsonify({"error": "OTP sudah kadaluarsa"}), 400
+        # Hindari error jika password lama None, gunakan .strip() untuk keamanan
+        if account.password == new_password:
+            return jsonify({"error": "Password baru tidak boleh sama dengan password lama!"}), 400
 
-    # Update Password & Hapus OTP
-    account.password = new_password
-    account.otp_code = None
-    account.otp_expiry = None
-    db_session.commit()
+        # Validasi OTP
+        if not account.otp_code or account.otp_code != otp:
+            return jsonify({"error": "Kode OTP salah"}), 400
 
-    return jsonify({"message": "Password berhasil direset"}), 200
+        # Validasi Expiry
+        if account.otp_expiry and account.otp_expiry < datetime.now():
+            return jsonify({"error": "OTP sudah kadaluarsa"}), 400
+
+        # Update Password & Bersihkan OTP
+        account.password = new_password
+        account.otp_code = None
+        account.otp_expiry = None
+        db_session.commit()
+
+        return jsonify({"message": "Password berhasil direset"}), 200
+
+    except Exception as e:
+        db_session.rollback()
+        return jsonify({"error": f"Server Error: {str(e)}"}), 500
 
 @app.route('/forgot-password')
 def forgot_password_page():

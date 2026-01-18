@@ -4,12 +4,11 @@ services:
   web:
     image: silaa/grading-web2:latest
     container_name: grading-web
-#    network_mode: "host"
     ports:
-      - "8001:8000"        # host:container
+      - "8001:8000"
     volumes:
-      - ./db.sqlite:/opt/grading/db.sqlite   # pakai file db dari host
-      - ./logs:/opt/grading/logs            # kalau mau log keluar ke host
+      - ./db.sqlite:/opt/grading/db.sqlite
+      - ./logs:/opt/grading/logs
       - /opt/grading:/opt/grading
       - /opt/grading/app:/opt/grading/app
       - /opt/grading/app/schemes:/opt/grading/app/schemes
@@ -25,7 +24,19 @@ services:
     networks:
       - grading-net
 
+  db-admin:
+    image: coleifer/sqlite-web
+    container_name: grading-db-admin
+    restart: unless-stopped
+    ports:
+      - "8002:8080"
+    volumes:
+      - ./db.sqlite:/data/db.sqlite
+    # Perbaikan: tambahkan 'sqlite_web' sebelum path filenya
+    command: sqlite_web /data/db.sqlite -H 0.0.0.0 -p 8080
+    networks:
+      - grading-net
+
 networks:
   grading-net:
     name: grading-net
-
