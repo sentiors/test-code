@@ -1,0 +1,14 @@
+{
+    "lab_id": "lab-test-01",
+    "grading_type": "kelompok",
+    "criteria": [
+        {
+            "type": "user",
+            "key": "lab-test",
+            "expected": "exists",
+            "description": "Check apakah ada user",
+            "score": 100.0,
+            "cleanup": true
+        }
+    ]
+}
