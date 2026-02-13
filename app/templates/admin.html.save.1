@@ -545,7 +545,7 @@ body {
         msg: document.getElementById('modalMessage'),
         footer: document.getElementById('modalFooter'),
 
-	show({ type = 'info', title, message, onConfirm = null, confirmText = 'Continue', showInput = false, inputPlaceholder = '', skipSecurity = false }) {
+	show({ type = 'info', title, message, onConfirm = null, confirmText = 'Continue', showInput = false, inputPlaceholder = '', skipSecurity = false }) { 
 	    this.el.classList.remove('hidden');
             this.title.innerText = title;
             this.msg.innerText = message;
@@ -585,18 +585,18 @@ body {
             btnConfirm.className = `flex-1 py-2.5 ${theme.btn} text-white rounded-xl text-[11px] font-bold shadow-lg transition-all`;
             btnConfirm.innerText = confirmText;
 btnConfirm.onclick = () => {
-    const val = showInput ? inputEl.value : null;
-
-    // PERBAIKAN: Hapus kata 'options.', langsung pakai 'skipSecurity'
-    if (showInput && !skipSecurity && val !== "SIJAGOAN") {
-        inputEl.classList.add('border-red-500', 'animate-shake');
-        return;
-    }
-
-    this.hide();
-    if (showInput) inputEl.remove();
-    if (onConfirm) onConfirm(val);
-};
+        const val = showInput ? inputEl.value : null;
+        
+        // Perbaikan di sini: skipSecurity sekarang sudah terdefinisi dari parameter di atas
+        if (showInput && !skipSecurity && val !== "SIJAGOAN") {
+            inputEl.classList.add('border-red-500', 'animate-shake');
+            return;
+        }
+        
+        this.hide();
+        if (showInput) inputEl.remove();
+        if (onConfirm) onConfirm(val);
+    };
             this.footer.appendChild(btnCancel);
             this.footer.appendChild(btnConfirm);
         },
@@ -615,89 +615,63 @@ btnConfirm.onclick = () => {
 
     // --- 4. EDITOR ACTIONS ---
 function closeScriptEditor() {
-        const cleanup = () => {
-            if (editor) editor.session.setValue("");
-            document.getElementById('editorModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-            isDirty = false;
-            currentOpenPath = "";
-            document.getElementById('currentFilePath').innerText = "No file selected";
-            updateDirtyUI();
-        };
-
-        if (isDirty) {
-            customAlert.show({
-                type: 'warning',
-                title: 'Unsaved Changes',
-                message: 'Discard changes and close?',
-                confirmText: 'Discard & Close',
-                onConfirm: cleanup
-            });
-        } else {
-            cleanup();
-        }
-    }
-
-    // Fungsi Tambah File/Folder (Hanya Satu)
-    function createNewNode(type) {
+    if (isDirty) {
         customAlert.show({
-            type: 'info',
-            title: type === 'file' ? 'New File' : 'New Folder',
-            message: `Masukkan nama ${type} baru:`,
-            showInput: true,
-            inputPlaceholder: type === 'file' ? 'script.py' : 'folder_name',
-            confirmText: 'Create',
-            skipSecurity: true, // Supaya tombol create bisa langsung diklik
-            onConfirm: async (name) => {
-                if (!name) return;
-                const res = await fetch('/create-node', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ name, type, path: "" })
-                });
-                const result = await res.json();
-                if (result.success) {
-                    refreshFileList();
-                    customAlert.show({ type: 'success', title: 'Success', message: `${type} created!` });
-                } else {
-                    alert("Gagal: " + result.error);
-                }
+            type: 'warning',
+            title: 'Unsaved Changes',
+            message: 'Discard changes and close the editor?',
+            confirmText: 'Discard & Close',
+            onConfirm: () => {
+                // ⭐ TAMBAH 2 BARIS INI:
+                if (editor) editor.session.setValue(""); 
+                document.getElementById('editorModal').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                isDirty = false;
+                updateDirtyUI();
             }
         });
+    } else {
+        // ⭐ TAMBAH 2 BARIS INI JUGA:
+        if (editor) editor.session.setValue(""); 
+        document.getElementById('editorModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
     }
+}
 
-async function saveFile() {
-    const content = editor.getValue();
+function createNewNode(type) {
+    const title = type === 'file' ? 'New File' : 'New Folder';
+    const placeholder = type === 'file' ? 'filename.py' : 'folder_name';
 
-    // SKENARIO 1: SAVE SEBAGAI FILE BARU (Belum ada file yang dibuka)
-    if (!currentOpenPath) {
-        customAlert.show({
-            type: 'info',
-            title: 'Save New File',
-            message: 'Masukkan nama file baru:',
-            showInput: true,
-            inputPlaceholder: 'script_baru.py',
-            confirmText: 'Create & Save',
-            skipSecurity: true, // <--- INI PENTING: Supaya tidak minta "SIJAGOAN"
-            onConfirm: async (newName) => {
-                if (!newName) return;
-                await processSave(newName, content);
-                refreshFileList(); // Refresh list agar file muncul
-            }
-        });
-        return;
-    }
-
-    // SKENARIO 2: EDIT FILE LAMA (Sudah ada path-nya)
+    // Menampilkan modal input nama
     customAlert.show({
-        type: 'warning',
-        title: 'Confirm Edit',
-        message: 'Ketik "SIJAGOAN" untuk menyimpan perubahan:',
+        type: 'info',
+        title: title,
+        message: `Masukkan nama ${type} baru:`,
         showInput: true,
-        confirmText: 'Update File',
-        skipSecurity: false, // <--- Minta konfirmasi "SIJAGOAN"
-        onConfirm: async () => {
-            await processSave(currentOpenPath, content);
+        inputPlaceholder: placeholder,
+        confirmText: 'Create',
+        // Tambahkan properti ini agar tidak perlu mengetik "SIJAGOAN"
+        skipSecurity: true, 
+        onConfirm: async (name) => {
+            if (!name) return;
+            
+            const res = await fetch('/create-node', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    name: name, 
+                    type: type,
+                    path: "" 
+                })
+            });
+            
+            const result = await res.json();
+            if (result.success) {
+                refreshFileList(); // Refresh list file tanpa reload halaman
+                customAlert.show({ type: 'success', title: 'Success', message: `${type} berhasil dibuat!` });
+            } else {
+                alert("Gagal membuat " + type + ": " + result.error);
+            }
         }
     });
 }
@@ -797,7 +771,7 @@ async function processSave(path, content) {
         });
     }
 
-    // --- 6. GUI SCRIPTSSSSS ---
+    // --- 6. CORE FUNCTIONS ---
     function showScriptEditor() {
         document.getElementById('editorModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
@@ -1007,6 +981,42 @@ async function deleteAdmin(adminId) {
         }
     });
 }
+
+// Tambahkan di dalam bagian script
+function createNewNode(type) {
+    const title = type === 'file' ? 'New File' : 'New Folder';
+    const placeholder = type === 'file' ? 'filename.py' : 'folder_name';
+
+    customAlert.show({
+        type: 'info',
+        title: title,
+        message: `Masukkan nama ${type} baru:`,
+        showInput: true,
+        inputPlaceholder: placeholder,
+        confirmText: 'Create',
+        onConfirm: async (name) => {
+            if (!name) return;
+            // Gunakan security key 'SIJAGOAN' jika prompt input di customAlert Anda 
+            // memang divalidasi dengan kata tersebut di baris 59
+            const res = await fetch('/create-node', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    name: name, 
+                    type: type,
+                    path: "" // Bisa disesuaikan jika ingin di folder tertentu
+                })
+            });
+            const result = await res.json();
+            if (result.success) {
+                location.reload(); // Refresh untuk melihat file baru di list
+            } else {
+                alert("Gagal membuat " + type + ": " + result.error);
+            }
+        }
+    });
+}
+
 
 
 </script>
